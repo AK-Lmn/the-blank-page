@@ -1,15 +1,93 @@
-import type { Entry } from "../types"
+import { supabase } from './supabase';
+import type { Entry } from '../types';
 
-const publicEntries: Entry[] = [
-  { id: "p-1", title: "A quieter kind of brave", message: "I said no today without explaining myself. It felt strange at first, then it felt like opening a window in a room I did not realize was close.", createdAt: "Today" },
-  { id: "p-2", title: "For the version of me who kept going", message: "I am learning that rest is not something to earn. There are small things worth staying for: the kettle beginning to sing, clean sheets, the first cool minute after rain.", createdAt: "Yesterday" },
-  { id: "p-3", title: "Still becoming", message: "Maybe it is enough to be unfinished. Maybe the parts of me that feel uncertain are simply making room for something new.", createdAt: "2 days ago" },
-]
+export async function submitEntry(title: string, message: string): Promise<Entry> {
+  const publicId = crypto.randomUUID().slice(0, 8);
 
-export async function getPublicEntries(): Promise<Entry[]> {
-  return publicEntries
+  const { data, error } = await supabase
+    .from('entries')
+    .insert({
+      public_id: publicId,
+      title,
+      message,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Supabase insert error:', error);
+    throw error;
+  }
+
+  return {
+    id: data.public_id || data.id,
+    title: data.title,
+    message: data.message,
+    createdAt: data.created_at || new Date().toISOString(),
+    local: true,
+  };
 }
 
-export async function getPublicEntry(id: string): Promise<Entry | undefined> {
-  return publicEntries.find((entry) => entry.id === id)
+export async function fetchEntries(): Promise<Entry[]> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .eq('is_hidden', false)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error('Supabase fetch error:', error);
+    throw error;
+  }
+
+  return (data ?? []).map((item: any) => ({
+    id: item.public_id || item.id,
+    title: item.title,
+    message: item.message,
+    createdAt: item.created_at || new Date().toISOString(),
+  }));
+}
+
+export async function getPublicEntries(): Promise<Entry[]> {
+  return fetchEntries();
+}
+
+export async function getPublicEntry(id: string): Promise<Entry | null> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .or(`public_id.eq.${id},id.eq.${id}`)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.public_id || data.id,
+    title: data.title,
+    message: data.message,
+    createdAt: data.created_at || new Date().toISOString(),
+  };
+}
+
+export async function searchEntries(query: string): Promise<Entry[]> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .ilike('title', `%${query}%`)
+    .eq('is_hidden', false)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error('Supabase search error:', error);
+    throw error;
+  }
+
+  return (data ?? []).map((item: any) => ({
+    id: item.public_id || item.id,
+    title: item.title ?? '',
+    message: item.message,
+    createdAt: item.created_at || new Date().toISOString(),
+  }));
 }
