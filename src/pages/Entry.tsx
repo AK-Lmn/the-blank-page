@@ -37,12 +37,12 @@ export default function Entry() {
 
   if (state.status === "loading") return <section role="status" className="mx-auto w-full max-w-[760px] pb-20 pt-10 text-sm text-[#6f8190] sm:pt-24">Opening this page…</section>
   if (state.status === "not-found") return <MessagePage message="This page is no longer here." />
-  if (state.status === "error") return <MessagePage message="This page could not be opened just now. Please try again." />
+  if (state.status === "error") return <MessagePage message="This page could not be opened just now. Please try again." alert />
 
   const { entry } = state
   return <article className="mx-auto w-full max-w-[760px] pb-20 pt-10 sm:pt-24"><Link to="/" className="mb-12 inline-block text-sm text-[#596773] transition hover:text-[#141a1f]">← Back</Link><div className="border-l-2 border-[#b9aabb] pl-5 sm:pl-8"><p className="text-xs font-medium uppercase tracking-[0.16em] text-[#8a718e]">Anonymous · {formatEntryDate(entry.createdAt)}</p><h1 className="font-display mt-5 break-words text-5xl leading-[1.02] tracking-[-0.05em] text-[#141a1f] sm:text-7xl">{entry.title}</h1></div><div className="mt-12 max-w-[650px] whitespace-pre-wrap break-words text-[1.15rem] leading-9 text-[#3c4f5d] [overflow-wrap:anywhere] sm:ml-8 sm:text-[1.3rem] sm:leading-10">{entry.message}</div></article>
 }
 
-function MessagePage({ message }: { message: string }) {
-  return <section className="mx-auto w-full max-w-[760px] pb-20 pt-10 sm:pt-24"><Link to="/" className="text-sm text-[#596773] transition hover:text-[#141a1f]">← Back</Link><p className="font-display mt-12 text-3xl text-[#3c4f5d]">{message}</p></section>
+function MessagePage({ message, alert = false }: { message: string; alert?: boolean }) {
+  return <section role={alert ? "alert" : undefined} className="mx-auto w-full max-w-[760px] pb-20 pt-10 sm:pt-24"><Link to="/" className="text-sm text-[#596773] transition hover:text-[#141a1f]">← Back</Link><p className="font-display mt-12 text-3xl text-[#3c4f5d]">{message}</p></section>
 }
