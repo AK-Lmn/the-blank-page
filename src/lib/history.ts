@@ -20,13 +20,13 @@ export function getHistory(): Entry[] {
 }
 
 export function saveToHistory(entry: Entry): Entry[] {
-  const next = [entry, ...getHistory()]
+  const next = [entry, ...getHistory().filter((saved) => saved.id !== entry.id)]
   localStorage.setItem(storageKey, JSON.stringify(next))
   return next
 }
 
-export function findHistoryEntry(id: string): Entry | undefined {
-  return getHistory().find((entry) => entry.id === id)
+export function findHistoryEntry(publicId: string): Entry | undefined {
+  return getHistory().find((entry) => entry.id === publicId)
 }
 
 export function clearHistory(): void {

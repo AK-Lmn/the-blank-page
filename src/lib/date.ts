@@ -9,3 +9,14 @@ export function formatRelativeDate(value: string): string {
 
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(date)
 }
+
+export function formatEntryDate(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "Date unavailable"
+
+  return new Intl.DateTimeFormat("en", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date)
+}

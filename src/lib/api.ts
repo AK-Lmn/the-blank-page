@@ -1,17 +1,23 @@
 import { supabase } from './supabase';
-import type { Entry } from '../types';
+import type { Entry, PublicEntryRow } from '../types';
+
+const publicEntryColumns = 'public_id, title, message, created_at';
+
+function toEntry(row: PublicEntryRow, local = false): Entry {
+  return {
+    id: row.public_id,
+    title: row.title,
+    message: row.message,
+    createdAt: row.created_at,
+    ...(local ? { local: true } : {}),
+  };
+}
 
 export async function submitEntry(title: string, message: string): Promise<Entry> {
-  const publicId = crypto.randomUUID().slice(0, 8);
-
   const { data, error } = await supabase
     .from('entries')
-    .insert({
-      public_id: publicId,
-      title,
-      message,
-    })
-    .select()
+    .insert({ title, message })
+    .select(publicEntryColumns)
     .single();
 
   if (error) {
@@ -19,20 +25,13 @@ export async function submitEntry(title: string, message: string): Promise<Entry
     throw error;
   }
 
-  return {
-    id: data.public_id || data.id,
-    title: data.title,
-    message: data.message,
-    createdAt: data.created_at || new Date().toISOString(),
-    local: true,
-  };
+  return toEntry(data as PublicEntryRow, true);
 }
 
 export async function fetchEntries(): Promise<Entry[]> {
   const { data, error } = await supabase
     .from('entries')
-    .select('*')
-    .eq('is_hidden', false)
+    .select(publicEntryColumns)
     .order('created_at', { ascending: false })
     .limit(20);
 
@@ -41,41 +40,34 @@ export async function fetchEntries(): Promise<Entry[]> {
     throw error;
   }
 
-  return (data ?? []).map((item: any) => ({
-    id: item.public_id || item.id,
-    title: item.title,
-    message: item.message,
-    createdAt: item.created_at || new Date().toISOString(),
-  }));
+  return ((data ?? []) as PublicEntryRow[]).map((row) => toEntry(row));
 }
 
 export async function getPublicEntries(): Promise<Entry[]> {
   return fetchEntries();
 }
 
-export async function getPublicEntry(id: string): Promise<Entry | null> {
+export async function getPublicEntry(publicId: string): Promise<Entry | null> {
   const { data, error } = await supabase
     .from('entries')
-    .select('*')
-    .or(`public_id.eq.${id},id.eq.${id}`)
-    .single();
+    .select(publicEntryColumns)
+    .eq('public_id', publicId)
+    .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) {
+    console.error('Supabase entry fetch error:', error);
+    throw error;
+  }
+  if (!data) return null;
 
-  return {
-    id: data.public_id || data.id,
-    title: data.title,
-    message: data.message,
-    createdAt: data.created_at || new Date().toISOString(),
-  };
+  return toEntry(data as PublicEntryRow);
 }
 
 export async function searchEntries(query: string): Promise<Entry[]> {
   const { data, error } = await supabase
     .from('entries')
-    .select('*')
+    .select(publicEntryColumns)
     .ilike('title', `%${query}%`)
-    .eq('is_hidden', false)
     .order('created_at', { ascending: false })
     .limit(20);
 
@@ -84,10 +76,5 @@ export async function searchEntries(query: string): Promise<Entry[]> {
     throw error;
   }
 
-  return (data ?? []).map((item: any) => ({
-    id: item.public_id || item.id,
-    title: item.title ?? '',
-    message: item.message,
-    createdAt: item.created_at || new Date().toISOString(),
-  }));
+  return ((data ?? []) as PublicEntryRow[]).map((row) => toEntry(row));
 }
