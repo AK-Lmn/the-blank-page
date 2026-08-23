@@ -4,6 +4,9 @@ node_modules
 # production build
 dist
 
+# Supabase CLI local state
+supabase/.temp/
+
 # environment variables
 .env
 .env.local

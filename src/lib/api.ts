@@ -13,19 +13,23 @@ function toEntry(row: PublicEntryRow, local = false): Entry {
   };
 }
 
-export async function submitEntry(title: string, message: string): Promise<Entry> {
-  const { data, error } = await supabase
-    .from('entries')
-    .insert({ title, message })
-    .select(publicEntryColumns)
-    .single();
+export class EntrySubmissionError extends Error {
+  constructor(public readonly status?: number) {
+    super('Entry submission failed')
+  }
+}
+
+export async function submitEntry(title: string, message: string, website = ''): Promise<Entry> {
+  const payload = website ? { title, message, website } : { title, message }
+  const { data, error } = await supabase.functions.invoke('submit-entry', { body: payload })
 
   if (error) {
-    console.error('Supabase insert error:', error);
-    throw error;
+    const status = error.context instanceof Response ? error.context.status : undefined
+    console.error('Entry submission request failed')
+    throw new EntrySubmissionError(status)
   }
 
-  return toEntry(data as PublicEntryRow, true);
+  return toEntry(data as PublicEntryRow, true)
 }
 
 export async function fetchEntries(): Promise<Entry[]> {

@@ -48,9 +48,26 @@ Public entries are stored in Supabase. PostgreSQL generates each entry's
 The browser submits only the entry title and message.
 
 Row Level Security allows anonymous visitors to read visible entries and submit
-new entries, while preventing public updates, deletes, and access to internal or
-moderation columns. A local copy of a writer's recent submissions is retained in
-their current browser for 7 days; clearing that history does not delete the
-public entry.
+new entries through a protected Edge Function, while preventing public updates,
+deletes, and access to internal or moderation columns. The function validates
+payloads, applies short-lived rate limits and duplicate protection, and inserts
+only the title and message. A local copy of a writer's recent submissions is
+retained in their current browser for 7 days; clearing that history does not
+delete the public entry.
 
-Rate limiting and moderation systems are not yet implemented in this repository.
+```txt
+Public reads: Browser -> Supabase Data API -> RLS -> visible entries
+Writes:       Browser -> submit-entry Edge Function -> validation/rate limit -> Supabase
+```
+
+The rate limiter uses ephemeral Redis keys and does not store raw IP addresses.
+The app has no accounts, profiles, reactions, comments, or social metrics.
+Moderation tooling is not yet implemented in this repository.
+
+## Verification
+
+```bash
+npx tsc --noEmit
+npm run build
+npm test
+```
