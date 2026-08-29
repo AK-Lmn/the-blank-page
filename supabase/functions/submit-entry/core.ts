@@ -7,25 +7,34 @@ export type PublicEntryRow = {
   created_at: string
 }
 
-export type AbuseCheckResult =
-  | { allowed: true }
-  | { allowed: false; retryAfterSeconds: number }
+export type AbuseCheckResult = { allowed: true } | {
+  allowed: false
+  retryAfterSeconds: number
+}
 
 export type SubmitEntryDependencies = {
   allowedOrigins: string[]
-  checkAbuse: (request: Request, normalizedContent: string) => Promise<AbuseCheckResult>
+  checkAbuse: (
+    request: Request,
+    normalizedContent: string,
+  ) => Promise<AbuseCheckResult>
   insertEntry: (title: string, message: string) => Promise<PublicEntryRow>
   log: (event: string) => void
 }
 
-function corsHeaders(origin: string | null, allowedOrigins: string[]): HeadersInit {
+function corsHeaders(
+  origin: string | null,
+  allowedOrigins: string[],
+): HeadersInit {
   const headers: Record<string, string> = {
-    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+    "Access-Control-Allow-Headers":
+      "authorization, apikey, content-type, x-client-info",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Vary": "Origin",
+    Vary: "Origin",
   }
 
-  if (origin && allowedOrigins.includes(origin)) headers["Access-Control-Allow-Origin"] = origin
+  if (origin && allowedOrigins.includes(origin))
+    headers["Access-Control-Allow-Origin"] = origin
   return headers
 }
 
@@ -37,13 +46,18 @@ function jsonResponse(
 ): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8", ...cors, ...extraHeaders },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      ...cors,
+      ...extraHeaders,
+    },
   })
 }
 
 async function readLimitedBody(request: Request): Promise<string> {
   const declaredLength = Number(request.headers.get("content-length"))
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) throw new Error("too-large")
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES)
+    throw new Error("too-large")
   if (!request.body) return ""
 
   const reader = request.body.getReader()
@@ -65,17 +79,30 @@ async function readLimitedBody(request: Request): Promise<string> {
   return body + decoder.decode()
 }
 
-export async function handleSubmitEntry(request: Request, deps: SubmitEntryDependencies): Promise<Response> {
+export async function handleSubmitEntry(
+  request: Request,
+  deps: SubmitEntryDependencies,
+): Promise<Response> {
   const origin = request.headers.get("origin")
   const cors = corsHeaders(origin, deps.allowedOrigins)
 
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors })
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: cors })
   if (request.method !== "POST") {
-    return jsonResponse(405, { error: "This endpoint only accepts submissions." }, cors, { Allow: "POST, OPTIONS" })
+    return jsonResponse(
+      405,
+      { error: "This endpoint only accepts submissions." },
+      cors,
+      { Allow: "POST, OPTIONS" },
+    )
   }
   if (origin && !deps.allowedOrigins.includes(origin)) {
     deps.log("origin_rejected")
-    return jsonResponse(403, { error: "This submission could not be accepted." }, cors)
+    return jsonResponse(
+      403,
+      { error: "This submission could not be accepted." },
+      cors,
+    )
   }
 
   let rawBody: string
@@ -83,40 +110,72 @@ export async function handleSubmitEntry(request: Request, deps: SubmitEntryDepen
     rawBody = await readLimitedBody(request)
   } catch {
     deps.log("request_too_large")
-    return jsonResponse(413, { error: "This entry is too large to submit." }, cors)
+    return jsonResponse(
+      413,
+      { error: "This entry is too large to submit." },
+      cors,
+    )
   }
 
   let payload: unknown
   try {
     payload = JSON.parse(rawBody)
   } catch {
-    return jsonResponse(400, { error: "This submission could not be read." }, cors)
+    return jsonResponse(
+      400,
+      { error: "This submission could not be read." },
+      cors,
+    )
   }
 
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    return jsonResponse(400, { error: "Please check your entry and try again." }, cors)
+    return jsonResponse(
+      400,
+      { error: "Please check your entry and try again." },
+      cors,
+    )
   }
 
   const record = payload as Record<string, unknown>
   const allowedKeys = new Set(["title", "message", "website"])
   if (Object.keys(record).some((key) => !allowedKeys.has(key))) {
-    return jsonResponse(400, { error: "Please check your entry and try again." }, cors)
+    return jsonResponse(
+      400,
+      { error: "Please check your entry and try again." },
+      cors,
+    )
   }
   if (typeof record.website === "string" && record.website.trim()) {
     deps.log("honeypot_rejected")
-    return jsonResponse(400, { error: "This submission could not be accepted." }, cors)
+    return jsonResponse(
+      400,
+      { error: "This submission could not be accepted." },
+      cors,
+    )
   }
   if (record.website !== undefined && typeof record.website !== "string") {
-    return jsonResponse(400, { error: "Please check your entry and try again." }, cors)
+    return jsonResponse(
+      400,
+      { error: "Please check your entry and try again." },
+      cors,
+    )
   }
   if (typeof record.title !== "string" || typeof record.message !== "string") {
-    return jsonResponse(400, { error: "Please add both a title and a message." }, cors)
+    return jsonResponse(
+      400,
+      { error: "Please add both a title and a message." },
+      cors,
+    )
   }
 
   const title = record.title.trim()
   const message = record.message.trim()
   if (!title || title.length > 90 || !message || message.length > 1400) {
-    return jsonResponse(400, { error: "Please check the length of your title and message." }, cors)
+    return jsonResponse(
+      400,
+      { error: "Please check the length of your title and message." },
+      cors,
+    )
   }
 
   const normalizedContent = `${title.toLocaleLowerCase()}\n${message.toLocaleLowerCase().replace(/\s+/g, " ")}`
@@ -125,7 +184,11 @@ export async function handleSubmitEntry(request: Request, deps: SubmitEntryDepen
     abuseCheck = await deps.checkAbuse(request, normalizedContent)
   } catch {
     deps.log("rate_limit_backend_error")
-    return jsonResponse(500, { error: "Something went wrong while publishing. Please try again." }, cors)
+    return jsonResponse(
+      500,
+      { error: "Something went wrong while publishing. Please try again." },
+      cors,
+    )
   }
 
   if (abuseCheck.allowed === false) {
@@ -144,6 +207,10 @@ export async function handleSubmitEntry(request: Request, deps: SubmitEntryDepen
     return jsonResponse(201, entry, cors)
   } catch {
     deps.log("database_insert_error")
-    return jsonResponse(500, { error: "Something went wrong while publishing. Please try again." }, cors)
+    return jsonResponse(
+      500,
+      { error: "Something went wrong while publishing. Please try again." },
+      cors,
+    )
   }
 }

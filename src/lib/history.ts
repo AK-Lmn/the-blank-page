@@ -10,9 +10,12 @@ function isCurrent(entry: Entry): boolean {
 
 export function getHistory(): Entry[] {
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as Entry[]
+    const saved = JSON.parse(
+      localStorage.getItem(storageKey) ?? "[]",
+    ) as Entry[]
     const current = saved.filter(isCurrent)
-    if (current.length !== saved.length) localStorage.setItem(storageKey, JSON.stringify(current))
+    if (current.length !== saved.length)
+      localStorage.setItem(storageKey, JSON.stringify(current))
     return current
   } catch {
     return []

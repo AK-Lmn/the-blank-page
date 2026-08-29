@@ -11,7 +11,12 @@ vi.mock("./supabase", () => ({
 
 import { fetchEntries, getPublicEntry, searchEntries, submitEntry } from "./api"
 
-const row = { public_id: "public-123", title: "Title", message: "Message", created_at: "2026-01-01T00:00:00Z" }
+const row = {
+  public_id: "public-123",
+  title: "Title",
+  message: "Message",
+  created_at: "2026-01-01T00:00:00Z",
+}
 
 describe("entry API", () => {
   beforeEach(() => {
@@ -22,17 +27,27 @@ describe("entry API", () => {
   it("submits only title and message through the Edge Function", async () => {
     mocks.invoke.mockResolvedValue({ data: row, error: null })
     await submitEntry("Title", "Message")
-    expect(mocks.invoke).toHaveBeenCalledWith("submit-entry", { body: { title: "Title", message: "Message" } })
+    expect(mocks.invoke).toHaveBeenCalledWith("submit-entry", {
+      body: { title: "Title", message: "Message" },
+    })
   })
 
   it("maps public_id to the frontend id", async () => {
     mocks.invoke.mockResolvedValue({ data: row, error: null })
-    await expect(submitEntry("Title", "Message")).resolves.toMatchObject({ id: "public-123", local: true })
+    await expect(submitEntry("Title", "Message")).resolves.toMatchObject({
+      id: "public-123",
+      local: true,
+    })
   })
 
   it("surfaces function errors", async () => {
-    mocks.invoke.mockResolvedValue({ data: null, error: { context: new Response(null, { status: 429 }) } })
-    await expect(submitEntry("Title", "Message")).rejects.toMatchObject({ status: 429 })
+    mocks.invoke.mockResolvedValue({
+      data: null,
+      error: { context: new Response(null, { status: 429 }) },
+    })
+    await expect(submitEntry("Title", "Message")).rejects.toMatchObject({
+      status: 429,
+    })
   })
 
   it("selects only public fields for the feed", async () => {

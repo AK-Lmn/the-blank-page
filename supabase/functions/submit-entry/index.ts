@@ -25,19 +25,21 @@ const rateLimitConfig = {
   hashSecret: requiredEnv("RATE_LIMIT_HASH_SECRET"),
 }
 
-Deno.serve((request) => handleSubmitEntry(request, {
-  allowedOrigins,
-  checkAbuse: (incomingRequest, normalizedContent) =>
-    checkRateLimit(incomingRequest, normalizedContent, rateLimitConfig),
-  insertEntry: async (title, message) => {
-    const { data, error } = await supabase
-      .from("entries")
-      .insert({ title, message })
-      .select("public_id, title, message, created_at")
-      .single()
+Deno.serve((request) =>
+  handleSubmitEntry(request, {
+    allowedOrigins,
+    checkAbuse: (incomingRequest, normalizedContent) =>
+      checkRateLimit(incomingRequest, normalizedContent, rateLimitConfig),
+    insertEntry: async (title, message) => {
+      const { data, error } = await supabase
+        .from("entries")
+        .insert({ title, message })
+        .select("public_id, title, message, created_at")
+        .single()
 
-    if (error || !data) throw new Error("insert-failed")
-    return data as PublicEntryRow
-  },
-  log: (event) => console.log(JSON.stringify({ event })),
-}))
+      if (error || !data) throw new Error("insert-failed")
+      return data as PublicEntryRow
+    },
+    log: (event) => console.log(JSON.stringify({ event })),
+  }),
+)

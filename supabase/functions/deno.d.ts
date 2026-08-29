@@ -4,11 +4,13 @@ declare const Deno: {
 }
 
 declare module "npm:@supabase/supabase-js@2" {
-  export function createClient(...args: unknown[]): {
+  export function createClient(
+    ...args: unknown[]
+  ): {
     from(table: string): {
       insert(value: Record<string, unknown>): {
         select(columns: string): {
-          single(): Promise<{ data: unknown; error: unknown }>
+          single(): Promise<{ data: unknown error: unknown }>
         }
       }
     }

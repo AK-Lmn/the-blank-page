@@ -1,7 +1,7 @@
-import { supabase } from './supabase';
-import type { Entry, PublicEntryRow } from '../types';
+import { supabase } from "./supabase"
+import type { Entry, PublicEntryRow } from "../types"
 
-const publicEntryColumns = 'public_id, title, message, created_at';
+const publicEntryColumns = "public_id, title, message, created_at"
 
 function toEntry(row: PublicEntryRow, local = false): Entry {
   return {
@@ -10,22 +10,29 @@ function toEntry(row: PublicEntryRow, local = false): Entry {
     message: row.message,
     createdAt: row.created_at,
     ...(local ? { local: true } : {}),
-  };
+  }
 }
 
 export class EntrySubmissionError extends Error {
   constructor(public readonly status?: number) {
-    super('Entry submission failed')
+    super("Entry submission failed")
   }
 }
 
-export async function submitEntry(title: string, message: string, website = ''): Promise<Entry> {
+export async function submitEntry(
+  title: string,
+  message: string,
+  website = "",
+): Promise<Entry> {
   const payload = website ? { title, message, website } : { title, message }
-  const { data, error } = await supabase.functions.invoke('submit-entry', { body: payload })
+  const { data, error } = await supabase.functions.invoke("submit-entry", {
+    body: payload,
+  })
 
   if (error) {
-    const status = error.context instanceof Response ? error.context.status : undefined
-    console.error('Entry submission request failed')
+    const status =
+      error.context instanceof Response ? error.context.status : undefined
+    console.error("Entry submission request failed")
     throw new EntrySubmissionError(status)
   }
 
@@ -34,51 +41,47 @@ export async function submitEntry(title: string, message: string, website = ''):
 
 export async function fetchEntries(): Promise<Entry[]> {
   const { data, error } = await supabase
-    .from('entries')
+    .from("entries")
     .select(publicEntryColumns)
-    .order('created_at', { ascending: false })
-    .limit(20);
+    .order("created_at", { ascending: false })
+    .limit(20)
 
   if (error) {
-    console.error('Supabase fetch error:', error);
-    throw error;
+    console.error("Supabase fetch error:", error)
+    throw error
   }
 
-  return ((data ?? []) as PublicEntryRow[]).map((row) => toEntry(row));
-}
-
-export async function getPublicEntries(): Promise<Entry[]> {
-  return fetchEntries();
+  return ((data ?? []) as PublicEntryRow[]).map((row) => toEntry(row))
 }
 
 export async function getPublicEntry(publicId: string): Promise<Entry | null> {
   const { data, error } = await supabase
-    .from('entries')
+    .from("entries")
     .select(publicEntryColumns)
-    .eq('public_id', publicId)
-    .maybeSingle();
+    .eq("public_id", publicId)
+    .maybeSingle()
 
   if (error) {
-    console.error('Supabase entry fetch error:', error);
-    throw error;
+    console.error("Supabase entry fetch error:", error)
+    throw error
   }
-  if (!data) return null;
+  if (!data) return null
 
-  return toEntry(data as PublicEntryRow);
+  return toEntry(data as PublicEntryRow)
 }
 
 export async function searchEntries(query: string): Promise<Entry[]> {
   const { data, error } = await supabase
-    .from('entries')
+    .from("entries")
     .select(publicEntryColumns)
-    .ilike('title', `%${query}%`)
-    .order('created_at', { ascending: false })
-    .limit(20);
+    .ilike("title", `%${query}%`)
+    .order("created_at", { ascending: false })
+    .limit(20)
 
   if (error) {
-    console.error('Supabase search error:', error);
-    throw error;
+    console.error("Supabase search error:", error)
+    throw error
   }
 
-  return ((data ?? []) as PublicEntryRow[]).map((row) => toEntry(row));
+  return ((data ?? []) as PublicEntryRow[]).map((row) => toEntry(row))
 }

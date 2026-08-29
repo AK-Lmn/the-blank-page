@@ -7,7 +7,10 @@ export function formatRelativeDate(value: string): string {
   if (days === 1) return "Yesterday"
   if (days < 7) return `${days} days ago`
 
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(date)
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+  }).format(date)
 }
 
 export function formatEntryDate(value: string): string {

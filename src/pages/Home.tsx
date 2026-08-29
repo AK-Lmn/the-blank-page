@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link } from "react-router"
 import EntryCard from "../components/EntryCard"
-import { getPublicEntries } from "../lib/api"
+import { fetchEntries } from "../lib/api"
 import { getHistory } from "../lib/history"
 import type { Entry } from "../types"
 
@@ -26,7 +26,7 @@ export default function Home() {
     setLoading(true)
     setError(false)
     try {
-      const publicEntries = await getPublicEntries()
+      const publicEntries = await fetchEntries()
       setEntries(mergeEntries(publicEntries, localEntries))
     } catch {
       setEntries(localEntries.slice(0, 3))
