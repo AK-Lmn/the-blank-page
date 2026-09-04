@@ -1,5 +1,14 @@
 import { FormEvent, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router"
+import {
+  ArrowLeft,
+  BookOpen,
+  PenLine,
+  RotateCcw,
+  Send,
+  User,
+  X,
+} from "lucide-react"
 import PrimaryButton from "../components/PrimaryButton"
 import { EntrySubmissionError, submitEntry } from "../lib/api"
 import { clearDraft, getDraft, saveDraft, saveToHistory } from "../lib/history"
@@ -104,9 +113,10 @@ export default function Write() {
     <section className="mx-auto w-full max-w-[680px] pb-16 pt-10 sm:pt-20">
       <Link
         to="/"
-        className="mb-10 inline-flex min-h-11 items-center text-sm text-[#596773] dark:text-[#8b949e] transition hover:text-[#141a1f] dark:hover:text-white"
+        className="mb-10 inline-flex min-h-11 items-center gap-1.5 text-sm text-[#596773] dark:text-[#8b949e] transition hover:text-[#141a1f] dark:hover:text-white"
       >
-        ← Back
+        <ArrowLeft className="h-4 w-4" />
+        <span>Back</span>
       </Link>
       <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#8a718e] dark:text-[#d8b4e2]">
         The Blank Page
@@ -128,7 +138,10 @@ export default function Write() {
             role="status"
             className="flex items-center justify-between rounded-xl border border-white/60 dark:border-white/15 bg-white/60 dark:bg-white/10 backdrop-blur-md px-4 py-2.5 text-xs text-[#596773] dark:text-[#8b949e]"
           >
-            <span>Draft restored from this device</span>
+            <div className="flex items-center gap-2">
+              <RotateCcw className="h-3.5 w-3.5 text-[#8a718e] dark:text-[#d8b4e2]" />
+              <span>Draft restored from this device</span>
+            </div>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -143,7 +156,7 @@ export default function Write() {
                 className="text-[#6f8190] dark:text-[#8b949e] hover:text-[#141a1f] dark:hover:text-white focus:outline-none"
                 aria-label="Dismiss draft notice"
               >
-                ✕
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
@@ -152,9 +165,10 @@ export default function Write() {
           <div className="mb-2.5 flex items-center justify-between gap-4">
             <label
               htmlFor="entry-title"
-              className="text-sm font-semibold text-[#3c4f5d] dark:text-[#c9d1d9]"
+              className="flex items-center gap-1.5 text-sm font-semibold text-[#3c4f5d] dark:text-[#c9d1d9]"
             >
-              Title
+              <BookOpen className="h-3.5 w-3.5 text-[#8a718e] dark:text-[#d8b4e2]" />
+              <span>Title</span>
             </label>
             <span
               id="title-count"
@@ -179,9 +193,10 @@ export default function Write() {
           <div className="mb-2.5 flex items-center justify-between gap-4">
             <label
               htmlFor="entry-author"
-              className="text-sm font-semibold text-[#3c4f5d] dark:text-[#c9d1d9]"
+              className="flex items-center gap-1.5 text-sm font-semibold text-[#3c4f5d] dark:text-[#c9d1d9]"
             >
-              Pen Name{" "}
+              <User className="h-3.5 w-3.5 text-[#8a718e] dark:text-[#d8b4e2]" />
+              <span>Pen Name</span>
               <span className="text-xs font-normal text-[#6f8190] dark:text-[#8b949e]">
                 (optional)
               </span>
@@ -208,9 +223,10 @@ export default function Write() {
           <div className="mb-2.5 flex items-center justify-between gap-4">
             <label
               htmlFor="entry-message"
-              className="text-sm font-semibold text-[#3c4f5d] dark:text-[#c9d1d9]"
+              className="flex items-center gap-1.5 text-sm font-semibold text-[#3c4f5d] dark:text-[#c9d1d9]"
             >
-              Message
+              <PenLine className="h-3.5 w-3.5 text-[#8a718e] dark:text-[#d8b4e2]" />
+              <span>Message</span>
             </label>
             <span
               id="message-count"
@@ -255,7 +271,10 @@ export default function Write() {
             disabled={!canSubmit || submitting}
             shortcut={shortcutBadge}
           >
-            {submitting ? "Publishing…" : "Submit anonymously"}
+            <span className="inline-flex items-center gap-2">
+              <Send className="h-3.5 w-3.5" />
+              <span>{submitting ? "Publishing…" : "Submit anonymously"}</span>
+            </span>
           </PrimaryButton>
         </div>
         {error && (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router"
+import { ArrowLeft, Calendar, Check, Copy, Shuffle, User } from "lucide-react"
 import { fetchRandomEntry, getPublicEntry } from "../lib/api"
 import { formatEntryDate } from "../lib/date"
 import { findHistoryEntry } from "../lib/history"
@@ -100,39 +101,36 @@ export default function Entry() {
     <article className="mx-auto w-full max-w-[760px] pb-20 pt-10 sm:pt-24">
       <Link
         to="/"
-        className="mb-12 inline-block text-sm text-[#596773] dark:text-[#8b949e] transition hover:text-[#141a1f] dark:hover:text-white"
+        className="mb-12 inline-flex items-center gap-1.5 text-sm text-[#596773] dark:text-[#8b949e] transition hover:text-[#141a1f] dark:hover:text-white"
       >
-        ← Back
+        <ArrowLeft className="h-4 w-4" />
+        <span>Back</span>
       </Link>
       <div className="rounded-[28px] border border-white/60 dark:border-white/10 bg-white/75 dark:bg-[#131b23]/75 backdrop-blur-xl p-7 shadow-[0_18px_55px_rgba(60,79,93,0.06)] dark:shadow-[0_18px_55px_rgba(0,0,0,0.4)] sm:p-12">
         <div className="border-l-2 border-[#b9aabb] dark:border-[#72a5c0]/50 pl-5 sm:pl-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#8a718e] dark:text-[#d8b4e2]">
-              {entry.author || "Anonymous"} · {formatEntryDate(entry.createdAt)}
-            </p>
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[#8a718e] dark:text-[#d8b4e2]">
+              <span className="inline-flex items-center gap-1">
+                <User className="h-3 w-3 opacity-80" />
+                <span>{entry.author || "Anonymous"}</span>
+              </span>
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="h-3 w-3 opacity-80" />
+                <span>{formatEntryDate(entry.createdAt)}</span>
+              </span>
+            </div>
             <button
               type="button"
               onClick={handleCopyLink}
               className="inline-flex items-center gap-1.5 rounded-full border border-white/60 dark:border-white/15 bg-white/60 dark:bg-white/10 backdrop-blur-md px-3 py-1 text-xs text-[#596773] dark:text-[#c9d1d9] transition hover:border-[#8c9aa6] hover:bg-white/90 dark:hover:bg-white/20 hover:text-[#141a1f] dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#72a5c0]"
               aria-label="Copy link to this entry"
             >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="h-3.5 w-3.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path
-                  d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-                  strokeLinecap="round"
-                />
-              </svg>
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-emerald-500" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
               <span>{copied ? "Link copied!" : "Copy link"}</span>
             </button>
             {copied && (
@@ -159,7 +157,12 @@ export default function Entry() {
               disabled={loadingRandom}
               className="inline-flex items-center gap-2 rounded-full border border-white/60 dark:border-white/15 bg-white/60 dark:bg-white/10 backdrop-blur-md px-5 py-2.5 text-sm font-semibold text-[#2f556a] dark:text-[#72a5c0] transition hover:-translate-y-0.5 hover:border-[#8c9aa6] hover:bg-white/90 dark:hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-[#72a5c0] disabled:opacity-60"
             >
-              {loadingRandom ? "Finding a page…" : "Read another thought →"}
+              <Shuffle
+                className={`h-4 w-4 ${loadingRandom ? "animate-spin" : ""}`}
+              />
+              <span>
+                {loadingRandom ? "Finding a page…" : "Read another thought"}
+              </span>
             </button>
           </div>
         </div>
@@ -182,9 +185,10 @@ function MessagePage({
     >
       <Link
         to="/"
-        className="text-sm text-[#596773] dark:text-[#8b949e] transition hover:text-[#141a1f] dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-[#596773] dark:text-[#8b949e] transition hover:text-[#141a1f] dark:hover:text-white"
       >
-        ← Back
+        <ArrowLeft className="h-4 w-4" />
+        <span>Back</span>
       </Link>
       <div className="mt-12 rounded-[24px] border border-white/60 dark:border-white/10 bg-white/75 dark:bg-[#131b23]/75 backdrop-blur-xl p-8 text-center sm:p-12">
         <p className="font-display text-3xl text-[#3c4f5d] dark:text-[#f0f6fc]">

@@ -1,8 +1,6 @@
 import { supabase } from "./supabase"
 import type { Entry, PublicEntryRow } from "../types"
 
-const publicEntryColumns = "public_id, title, message, author, created_at"
-
 function toEntry(row: PublicEntryRow, local = false): Entry {
   return {
     id: row.public_id,
@@ -43,14 +41,35 @@ export async function submitEntry(
   return toEntry(data as PublicEntryRow, true)
 }
 
+const fullEntryColumns = "public_id, title, message, author, created_at"
+const legacyEntryColumns = "public_id, title, message, created_at"
+
+function isColumnError(error: { message?: string code?: string }): boolean {
+  return Boolean(
+    error.message?.includes("author") ||
+      error.code === "PGRST204" ||
+      error.code === "42703",
+  )
+}
+
 export async function fetchEntries(): Promise<Entry[]> {
   const { data, error } = await supabase
     .from("entries")
-    .select(publicEntryColumns)
+    .select(fullEntryColumns)
     .order("created_at", { ascending: false })
     .limit(20)
 
   if (error) {
+    if (isColumnError(error)) {
+      const fallback = await supabase
+        .from("entries")
+        .select(legacyEntryColumns)
+        .order("created_at", { ascending: false })
+        .limit(20)
+      if (!fallback.error && fallback.data) {
+        return (fallback.data as PublicEntryRow[]).map((row) => toEntry(row))
+      }
+    }
     console.error("Supabase fetch error:", error)
     throw error
   }
@@ -61,11 +80,22 @@ export async function fetchEntries(): Promise<Entry[]> {
 export async function getPublicEntry(publicId: string): Promise<Entry | null> {
   const { data, error } = await supabase
     .from("entries")
-    .select(publicEntryColumns)
+    .select(fullEntryColumns)
     .eq("public_id", publicId)
     .maybeSingle()
 
   if (error) {
+    if (isColumnError(error)) {
+      const fallback = await supabase
+        .from("entries")
+        .select(legacyEntryColumns)
+        .eq("public_id", publicId)
+        .maybeSingle()
+      if (!fallback.error) {
+        if (!fallback.data) return null
+        return toEntry(fallback.data as PublicEntryRow)
+      }
+    }
     console.error("Supabase entry fetch error:", error)
     throw error
   }
@@ -77,12 +107,23 @@ export async function getPublicEntry(publicId: string): Promise<Entry | null> {
 export async function searchEntries(query: string): Promise<Entry[]> {
   const { data, error } = await supabase
     .from("entries")
-    .select(publicEntryColumns)
+    .select(fullEntryColumns)
     .or(`title.ilike.%${query}%,author.ilike.%${query}%`)
     .order("created_at", { ascending: false })
     .limit(20)
 
   if (error) {
+    if (isColumnError(error)) {
+      const fallback = await supabase
+        .from("entries")
+        .select(legacyEntryColumns)
+        .ilike("title", `%${query}%`)
+        .order("created_at", { ascending: false })
+        .limit(20)
+      if (!fallback.error && fallback.data) {
+        return (fallback.data as PublicEntryRow[]).map((row) => toEntry(row))
+      }
+    }
     console.error("Supabase search error:", error)
     throw error
   }

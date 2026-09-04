@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router"
+import { ArrowLeft, Clock, PenLine, Trash2 } from "lucide-react"
 import EntryCard from "../components/EntryCard"
 import { clearHistory, getHistory } from "../lib/history"
 import type { Entry } from "../types"
@@ -19,9 +20,10 @@ export default function History() {
     <section className="mx-auto w-full max-w-[760px] pb-16 pt-10 sm:pt-20">
       <Link
         to="/"
-        className="mb-10 inline-flex min-h-11 items-center text-sm text-[#596773] dark:text-[#8b949e] transition hover:text-[#141a1f] dark:hover:text-white"
+        className="mb-10 inline-flex min-h-11 items-center gap-1.5 text-sm text-[#596773] dark:text-[#8b949e] transition hover:text-[#141a1f] dark:hover:text-white"
       >
-        ← Back
+        <ArrowLeft className="h-4 w-4" />
+        <span>Back</span>
       </Link>
       <div className="flex flex-col gap-5 border-b border-[#c5ccd3]/50 dark:border-white/10 pb-7 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -40,9 +42,10 @@ export default function History() {
           <button
             type="button"
             onClick={() => setConfirmingClear(true)}
-            className="min-h-11 w-fit rounded-full border border-white/60 dark:border-white/15 bg-white/60 dark:bg-white/10 backdrop-blur-md px-4 py-2 text-sm text-[#596773] dark:text-[#c9d1d9] transition hover:border-[#8c9aa6] hover:bg-white/90 dark:hover:bg-white/20 hover:text-[#28343e] dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#72a5c0]"
+            className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full border border-white/60 dark:border-white/15 bg-white/60 dark:bg-white/10 backdrop-blur-md px-4 py-2 text-sm text-[#596773] dark:text-[#c9d1d9] transition hover:border-[#8c9aa6] hover:bg-white/90 dark:hover:bg-white/20 hover:text-[#28343e] dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#72a5c0]"
           >
-            Clear history
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Clear history</span>
           </button>
         )}
       </div>
@@ -80,14 +83,16 @@ export default function History() {
           ))
         ) : (
           <div className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-12 text-center">
+            <Clock className="mx-auto mb-3 h-8 w-8 text-[#8a718e]/60 dark:text-[#d8b4e2]/60" />
             <p className="font-display text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
               Nothing saved here yet.
             </p>
             <Link
               to="/write"
-              className="mt-5 inline-flex min-h-11 items-center text-sm font-medium text-[#2f556a] dark:text-[#72a5c0] underline underline-offset-4"
+              className="mt-5 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-[#2f556a] dark:text-[#72a5c0] underline underline-offset-4"
             >
-              Write the first page
+              <span>Write the first page</span>
+              <PenLine className="h-3.5 w-3.5" />
             </Link>
           </div>
         )}

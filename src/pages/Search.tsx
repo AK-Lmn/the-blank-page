@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { AlertCircle, FileSearch, Search as SearchIcon } from "lucide-react"
 import EntryCard from "../components/EntryCard"
 import SearchInput from "../components/SearchInput"
 import { searchEntries } from "../lib/api"
@@ -102,7 +103,8 @@ export default function Search() {
             role="alert"
             className="rounded-[24px] border border-white/60 dark:border-white/10 bg-white/75 dark:bg-[#131b23]/75 backdrop-blur-xl px-7 py-14 text-center shadow-[0_8px_24px_rgba(60,79,93,0.04)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
           >
-            <p className="font-display text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
+            <AlertCircle className="mx-auto h-8 w-8 text-[#8a718e] dark:text-[#d8b4e2]" />
+            <p className="font-display mt-4 text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
               Search is unavailable just now
             </p>
             <p className="mt-3 text-sm text-[#6f8190] dark:text-[#8b949e]">
@@ -112,6 +114,7 @@ export default function Search() {
         )}
         {canSearch && !loading && !failed && results.length === 0 && (
           <div className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-14 text-center">
+            <FileSearch className="mx-auto mb-3 h-8 w-8 text-[#8a718e]/60 dark:text-[#d8b4e2]/60" />
             <p className="font-display text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
               No entries found
             </p>
@@ -141,17 +144,7 @@ function SearchPrompt({ message }: { message: string }) {
   return (
     <div className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-14 text-center">
       <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-white/60 dark:bg-white/10 text-[#8a718e] dark:text-[#d8b4e2]">
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
-        >
-          <circle cx="11" cy="11" r="5.5" />
-          <path d="m15.5 15.5 4 4" strokeLinecap="round" />
-        </svg>
+        <SearchIcon className="h-6 w-6" />
       </div>
       <p className="font-display mt-5 text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
         {message}
