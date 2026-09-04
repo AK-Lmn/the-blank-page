@@ -46,9 +46,11 @@ const legacyEntryColumns = "public_id, title, message, created_at"
 
 function isColumnError(error: { message?: string code?: string }): boolean {
   return Boolean(
-    error.message?.includes("author") ||
+    error.code === "42501" ||
       error.code === "PGRST204" ||
-      error.code === "42703",
+      error.code === "42703" ||
+      error.message?.includes("author") ||
+      error.message?.includes("permission denied"),
   )
 }
 
