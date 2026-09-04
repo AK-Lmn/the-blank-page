@@ -27,15 +27,16 @@ export default function ThemeToggle() {
       onClick={toggle}
       title={label}
       aria-label={label}
-      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/60 dark:border-white/15 bg-white/60 dark:bg-white/10 backdrop-blur-md p-2.5 text-[#434d56] dark:text-[#c9d1d9] transition-all hover:-translate-y-0.5 hover:border-[#8c9aa6] hover:bg-white/90 dark:hover:bg-white/20 hover:text-[#141a1f] dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#72a5c0]"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/60 dark:border-white/15 bg-white/60 dark:bg-white/10 backdrop-blur-md px-3 py-2 text-xs font-medium text-[#434d56] dark:text-[#c9d1d9] transition-all hover:-translate-y-0.5 hover:border-[#8c9aa6] hover:bg-white/90 dark:hover:bg-white/20 hover:text-[#141a1f] dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#72a5c0]"
     >
       {theme === "system" ? (
-        <Monitor className="h-4 w-4" />
+        <Monitor className="h-3.5 w-3.5" />
       ) : theme === "dark" ? (
-        <Moon className="h-4 w-4" />
+        <Moon className="h-3.5 w-3.5" />
       ) : (
-        <Sun className="h-4 w-4" />
+        <Sun className="h-3.5 w-3.5" />
       )}
+      <span className="hidden sm:inline">Theme</span>
     </button>
   )
 }

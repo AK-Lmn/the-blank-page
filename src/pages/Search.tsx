@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react"
-import { AlertCircle, FileSearch, Search as SearchIcon } from "lucide-react"
 import EntryCard from "../components/EntryCard"
 import SearchInput from "../components/SearchInput"
 import { searchEntries } from "../lib/api"
@@ -63,15 +62,11 @@ export default function Search() {
   return (
     <section className="mx-auto w-full max-w-3xl pb-16 pt-10 sm:pb-24 sm:pt-20">
       <div className="text-center">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#8a718e] dark:text-[#d8b4e2]">
-          Search
-        </p>
-        <h1 className="font-display mt-3 text-5xl tracking-[-0.05em] text-[#141a1f] dark:text-[#f0f6fc] sm:text-6xl">
+        <h1 className="font-display text-5xl tracking-[-0.05em] text-[#141a1f] dark:text-[#f0f6fc] sm:text-6xl">
           Find a thought
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[#596773] dark:text-[#8b949e] sm:text-lg">
-          Search public entries by title or pen name. The message body remains
-          for reading, not discovery.
+        <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[#596773] dark:text-[#8b949e] sm:text-lg">
+          Search by title or pen name. Messages aren't searchable.
         </p>
       </div>
       <div className="mx-auto mt-10 max-w-2xl">
@@ -82,16 +77,15 @@ export default function Search() {
         />
       </div>
       <div className="mt-14">
-        {!trimmedQuery && (
-          <SearchPrompt message="Start typing to search public entries" />
-        )}
         {trimmedQuery && !canSearch && (
-          <SearchPrompt message="Enter at least two letters or numbers" />
+          <p className="py-10 text-center text-sm text-[#6f8190] dark:text-[#8b949e]">
+            Enter at least two letters or numbers
+          </p>
         )}
         {canSearch && loading && (
           <div
             role="status"
-            className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-14 text-center"
+            className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-12 text-center"
           >
             <p className="font-display text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
               Searching…
@@ -101,24 +95,22 @@ export default function Search() {
         {canSearch && !loading && failed && (
           <div
             role="alert"
-            className="rounded-[24px] border border-white/60 dark:border-white/10 bg-white/75 dark:bg-[#131b23]/75 backdrop-blur-xl px-7 py-14 text-center shadow-[0_8px_24px_rgba(60,79,93,0.04)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
+            className="rounded-[24px] border border-white/60 dark:border-white/10 bg-white/75 dark:bg-[#131b23]/75 backdrop-blur-xl px-7 py-12 text-center shadow-[0_8px_24px_rgba(60,79,93,0.04)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
           >
-            <AlertCircle className="mx-auto h-8 w-8 text-[#8a718e] dark:text-[#d8b4e2]" />
-            <p className="font-display mt-4 text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
+            <p className="font-display text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
               Search is unavailable just now
             </p>
-            <p className="mt-3 text-sm text-[#6f8190] dark:text-[#8b949e]">
+            <p className="mt-2 text-sm text-[#6f8190] dark:text-[#8b949e]">
               Please wait a moment and try again.
             </p>
           </div>
         )}
         {canSearch && !loading && !failed && results.length === 0 && (
-          <div className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-14 text-center">
-            <FileSearch className="mx-auto mb-3 h-8 w-8 text-[#8a718e]/60 dark:text-[#d8b4e2]/60" />
+          <div className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-12 text-center">
             <p className="font-display text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
               No entries found
             </p>
-            <p className="mt-3 text-sm text-[#6f8190] dark:text-[#8b949e]">
+            <p className="mt-2 text-sm text-[#6f8190] dark:text-[#8b949e]">
               Try a different title or a shorter phrase.
             </p>
           </div>
@@ -137,18 +129,5 @@ export default function Search() {
         )}
       </div>
     </section>
-  )
-}
-
-function SearchPrompt({ message }: { message: string }) {
-  return (
-    <div className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-14 text-center">
-      <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-white/60 dark:bg-white/10 text-[#8a718e] dark:text-[#d8b4e2]">
-        <SearchIcon className="h-6 w-6" />
-      </div>
-      <p className="font-display mt-5 text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
-        {message}
-      </p>
-    </div>
   )
 }

@@ -1,5 +1,5 @@
 import { Link } from "react-router"
-import { ArrowRight, Calendar, User } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { formatEntryDate, formatRelativeDate } from "../lib/date"
 import type { Entry } from "../types"
 
@@ -36,25 +36,12 @@ export default function EntryCard({
         <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#6f8190] dark:text-[#7d8590] transition-transform duration-200 group-hover:translate-x-1" />
       </div>
       <div className="mt-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[#6f8190] dark:text-[#8b949e]">
-          {hasCustomAuthor && (
-            <>
-              <span className="inline-flex items-center gap-1">
-                <User className="h-3 w-3 opacity-75" />
-                <span>{entry.author}</span>
-              </span>
-              <span aria-hidden="true">·</span>
-            </>
-          )}
-          <span className="inline-flex items-center gap-1">
-            <Calendar className="h-3 w-3 opacity-75" />
-            <span>{date}</span>
-          </span>
-        </div>
+        <p className="text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[#6f8190] dark:text-[#8b949e]">
+          {hasCustomAuthor ? `${entry.author} · ${date}` : date}
+        </p>
         {showReadLink && (
-          <span className="inline-flex items-center gap-1 text-[0.68rem] font-medium text-[#2f556a] dark:text-[#72a5c0] opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-            <span>Read entry</span>
-            <ArrowRight className="h-3 w-3" />
+          <span className="text-[0.68rem] font-medium text-[#2f556a] dark:text-[#72a5c0] opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+            Read entry →
           </span>
         )}
       </div>
