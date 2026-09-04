@@ -1,13 +1,14 @@
 import { supabase } from "./supabase"
 import type { Entry, PublicEntryRow } from "../types"
 
-const publicEntryColumns = "public_id, title, message, created_at"
+const publicEntryColumns = "public_id, title, message, author, created_at"
 
 function toEntry(row: PublicEntryRow, local = false): Entry {
   return {
     id: row.public_id,
     title: row.title,
     message: row.message,
+    author: row.author || "Anonymous",
     createdAt: row.created_at,
     ...(local ? { local: true } : {}),
   }
@@ -22,9 +23,12 @@ export class EntrySubmissionError extends Error {
 export async function submitEntry(
   title: string,
   message: string,
+  author = "",
   website = "",
 ): Promise<Entry> {
-  const payload = website ? { title, message, website } : { title, message }
+  const payload: Record<string, string> = { title, message }
+  if (author.trim()) payload.author = author.trim()
+  if (website) payload.website = website
   const { data, error } = await supabase.functions.invoke("submit-entry", {
     body: payload,
   })
@@ -74,7 +78,7 @@ export async function searchEntries(query: string): Promise<Entry[]> {
   const { data, error } = await supabase
     .from("entries")
     .select(publicEntryColumns)
-    .ilike("title", `%${query}%`)
+    .or(`title.ilike.%${query}%,author.ilike.%${query}%`)
     .order("created_at", { ascending: false })
     .limit(20)
 

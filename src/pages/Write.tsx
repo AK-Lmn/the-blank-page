@@ -7,6 +7,7 @@ import { useTheme } from "../lib/ThemeContext"
 
 const titleLimit = 90
 const messageLimit = 1400
+const authorLimit = 30
 
 const isMac =
   typeof navigator !== "undefined" &&
@@ -18,17 +19,18 @@ export default function Write() {
   const { triggerTypingGlow } = useTheme()
   const [title, setTitle] = useState(() => getDraft()?.title ?? "")
   const [message, setMessage] = useState(() => getDraft()?.message ?? "")
+  const [author, setAuthor] = useState(() => getDraft()?.author ?? "")
   const [website, setWebsite] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [draftRestored, setDraftRestored] = useState(() => {
     const draft = getDraft()
-    return Boolean(draft && (draft.title || draft.message))
+    return Boolean(draft && (draft.title || draft.message || draft.author))
   })
 
   useEffect(() => {
-    saveDraft({ title, message })
-  }, [title, message])
+    saveDraft({ title, message, author })
+  }, [title, message, author])
 
   const trimmedTitle = title.trim()
   const trimmedMessage = message.trim()
@@ -43,7 +45,12 @@ export default function Write() {
     setSubmitting(true)
     setError("")
     try {
-      const entry = await submitEntry(trimmedTitle, trimmedMessage, website)
+      const entry = await submitEntry(
+        trimmedTitle,
+        trimmedMessage,
+        author.trim(),
+        website,
+      )
       clearDraft()
       saveToHistory(entry)
       navigate(`/entry/${entry.id}`)
@@ -74,11 +81,17 @@ export default function Write() {
     clearDraft()
     setTitle("")
     setMessage("")
+    setAuthor("")
     setDraftRestored(false)
   }
 
   function handleTitleChange(event: React.ChangeEvent<HTMLInputElement>) {
     setTitle(event.target.value)
+    triggerTypingGlow?.()
+  }
+
+  function handleAuthorChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setAuthor(event.target.value)
     triggerTypingGlow?.()
   }
 
@@ -159,6 +172,35 @@ export default function Write() {
             disabled={submitting}
             aria-describedby="title-count"
             placeholder="Give this thought a name"
+            className="w-full rounded-xl border border-white/60 dark:border-white/15 bg-white/70 dark:bg-[#0c1015]/70 backdrop-blur-sm px-4 py-3.5 text-base text-[#141a1f] dark:text-[#f0f6fc] outline-none placeholder:text-[#8c9aa6] dark:placeholder:text-[#6e7681] focus:border-[#4f8eb0] dark:focus:border-[#72a5c0] focus:ring-2 focus:ring-[#b9d2df] dark:focus:ring-[#72a5c0]/30 disabled:opacity-70"
+          />
+        </div>
+        <div>
+          <div className="mb-2.5 flex items-center justify-between gap-4">
+            <label
+              htmlFor="entry-author"
+              className="text-sm font-semibold text-[#3c4f5d] dark:text-[#c9d1d9]"
+            >
+              Pen Name{" "}
+              <span className="text-xs font-normal text-[#6f8190] dark:text-[#8b949e]">
+                (optional)
+              </span>
+            </label>
+            <span
+              id="author-count"
+              className="text-xs tabular-nums text-[#6f8190] dark:text-[#8b949e]"
+            >
+              {author.length} / {authorLimit}
+            </span>
+          </div>
+          <input
+            id="entry-author"
+            value={author}
+            onChange={handleAuthorChange}
+            maxLength={authorLimit}
+            disabled={submitting}
+            aria-describedby="author-count"
+            placeholder="Leave blank to stay Anonymous"
             className="w-full rounded-xl border border-white/60 dark:border-white/15 bg-white/70 dark:bg-[#0c1015]/70 backdrop-blur-sm px-4 py-3.5 text-base text-[#141a1f] dark:text-[#f0f6fc] outline-none placeholder:text-[#8c9aa6] dark:placeholder:text-[#6e7681] focus:border-[#4f8eb0] dark:focus:border-[#72a5c0] focus:ring-2 focus:ring-[#b9d2df] dark:focus:ring-[#72a5c0]/30 disabled:opacity-70"
           />
         </div>

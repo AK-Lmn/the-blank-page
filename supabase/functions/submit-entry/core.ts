@@ -4,6 +4,7 @@ export type PublicEntryRow = {
   public_id: string
   title: string
   message: string
+  author: string
   created_at: string
 }
 
@@ -18,7 +19,11 @@ export type SubmitEntryDependencies = {
     request: Request,
     normalizedContent: string,
   ) => Promise<AbuseCheckResult>
-  insertEntry: (title: string, message: string) => Promise<PublicEntryRow>
+  insertEntry: (
+    title: string,
+    message: string,
+    author: string,
+  ) => Promise<PublicEntryRow>
   log: (event: string) => void
 }
 
@@ -137,7 +142,7 @@ export async function handleSubmitEntry(
   }
 
   const record = payload as Record<string, unknown>
-  const allowedKeys = new Set(["title", "message", "website"])
+  const allowedKeys = new Set(["title", "message", "author", "website"])
   if (Object.keys(record).some((key) => !allowedKeys.has(key))) {
     return jsonResponse(
       400,
@@ -164,6 +169,27 @@ export async function handleSubmitEntry(
     return jsonResponse(
       400,
       { error: "Please add both a title and a message." },
+      cors,
+    )
+  }
+
+  let author = "Anonymous"
+  if (typeof record.author === "string") {
+    const trimmedAuthor = record.author.trim()
+    if (trimmedAuthor.length > 30) {
+      return jsonResponse(
+        400,
+        { error: "Please keep your pen name within 30 characters." },
+        cors,
+      )
+    }
+    if (trimmedAuthor.length > 0) {
+      author = trimmedAuthor
+    }
+  } else if (record.author !== undefined && record.author !== null) {
+    return jsonResponse(
+      400,
+      { error: "Please check your pen name and try again." },
       cors,
     )
   }
@@ -202,7 +228,7 @@ export async function handleSubmitEntry(
   }
 
   try {
-    const entry = await deps.insertEntry(title, message)
+    const entry = await deps.insertEntry(title, message, author)
     deps.log("submission_created")
     return jsonResponse(201, entry, cors)
   } catch {

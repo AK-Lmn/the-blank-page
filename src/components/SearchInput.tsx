@@ -31,8 +31,8 @@ export default function SearchInput({
       <input
         value={value}
         onChange={handleChange}
-        placeholder="Search by title..."
-        aria-label="Search public entries by title"
+        placeholder="Search by title or pen name..."
+        aria-label="Search public entries by title or pen name"
         className="w-full rounded-[22px] border border-white/60 dark:border-white/15 bg-white/75 dark:bg-[#131b23]/75 backdrop-blur-xl py-4 pl-14 pr-14 text-base text-[#28343e] dark:text-[#f0f6fc] shadow-[0_10px_30px_rgba(60,79,93,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.35)] outline-none placeholder:text-[#8c9aa6] dark:placeholder:text-[#6e7681] transition focus:border-[#4f8eb0] dark:focus:border-[#72a5c0] focus:ring-4 focus:ring-[#dce8ef] dark:focus:ring-[#72a5c0]/20 sm:py-5 sm:text-lg"
       />
       {value && (

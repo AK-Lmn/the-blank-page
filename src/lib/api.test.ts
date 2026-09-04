@@ -21,6 +21,7 @@ const row = {
   public_id: "public-123",
   title: "Title",
   message: "Message",
+  author: "Wanderer",
   created_at: "2026-01-01T00:00:00Z",
 }
 
@@ -28,6 +29,7 @@ const row2 = {
   public_id: "public-456",
   title: "Second Title",
   message: "Second Message",
+  author: "Anonymous",
   created_at: "2026-01-02T00:00:00Z",
 }
 
@@ -37,7 +39,7 @@ describe("entry API", () => {
     mocks.invoke.mockReset()
   })
 
-  it("submits only title and message through the Edge Function", async () => {
+  it("submits title and message through the Edge Function", async () => {
     mocks.invoke.mockResolvedValue({ data: row, error: null })
     await submitEntry("Title", "Message")
     expect(mocks.invoke).toHaveBeenCalledWith("submit-entry", {
@@ -45,10 +47,21 @@ describe("entry API", () => {
     })
   })
 
-  it("maps public_id to the frontend id", async () => {
+  it("submits author when provided", async () => {
     mocks.invoke.mockResolvedValue({ data: row, error: null })
-    await expect(submitEntry("Title", "Message")).resolves.toMatchObject({
+    await submitEntry("Title", "Message", "Wanderer")
+    expect(mocks.invoke).toHaveBeenCalledWith("submit-entry", {
+      body: { title: "Title", message: "Message", author: "Wanderer" },
+    })
+  })
+
+  it("maps public_id and author to the frontend entry", async () => {
+    mocks.invoke.mockResolvedValue({ data: row, error: null })
+    await expect(
+      submitEntry("Title", "Message", "Wanderer"),
+    ).resolves.toMatchObject({
       id: "public-123",
+      author: "Wanderer",
       local: true,
     })
   })
@@ -69,7 +82,9 @@ describe("entry API", () => {
     const select = vi.fn(() => ({ order }))
     mocks.from.mockReturnValue({ select })
     await fetchEntries()
-    expect(select).toHaveBeenCalledWith("public_id, title, message, created_at")
+    expect(select).toHaveBeenCalledWith(
+      "public_id, title, message, author, created_at",
+    )
   })
 
   it("queries detail only by public_id", async () => {
@@ -81,15 +96,17 @@ describe("entry API", () => {
     expect(eq).toHaveBeenCalledWith("public_id", "public-123")
   })
 
-  it("keeps title search limited and public-column only", async () => {
+  it("keeps search limited and searches both title and author", async () => {
     const limit = vi.fn().mockResolvedValue({ data: [row], error: null })
     const order = vi.fn(() => ({ limit }))
-    const ilike = vi.fn(() => ({ order }))
-    const select = vi.fn(() => ({ ilike }))
+    const or = vi.fn(() => ({ order }))
+    const select = vi.fn(() => ({ or }))
     mocks.from.mockReturnValue({ select })
     await searchEntries("quiet")
-    expect(select).toHaveBeenCalledWith("public_id, title, message, created_at")
-    expect(ilike).toHaveBeenCalledWith("title", "%quiet%")
+    expect(select).toHaveBeenCalledWith(
+      "public_id, title, message, author, created_at",
+    )
+    expect(or).toHaveBeenCalledWith("title.ilike.%quiet%,author.ilike.%quiet%")
     expect(limit).toHaveBeenCalledWith(20)
   })
 

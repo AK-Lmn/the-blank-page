@@ -51,17 +51,22 @@ describe("local history", () => {
       expect(getDraft()).toBeNull()
     })
 
-    it("saves and retrieves a draft", () => {
-      saveDraft({ title: "My quiet thought", message: "Here is what I feel" })
+    it("saves and retrieves a draft with author", () => {
+      saveDraft({
+        title: "My quiet thought",
+        message: "Here is what I feel",
+        author: "Wanderer",
+      })
       expect(getDraft()).toEqual({
         title: "My quiet thought",
         message: "Here is what I feel",
+        author: "Wanderer",
       })
     })
 
-    it("clears draft if title and message are empty", () => {
-      saveDraft({ title: "Title", message: "Message" })
-      saveDraft({ title: "", message: "" })
+    it("clears draft if title, message, and author are empty", () => {
+      saveDraft({ title: "Title", message: "Message", author: "Author" })
+      saveDraft({ title: "", message: "", author: "" })
       expect(getDraft()).toBeNull()
     })
 

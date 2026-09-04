@@ -9,6 +9,7 @@ const validRow = {
   public_id: "public-id",
   title: "Title",
   message: "Message",
+  author: "Anonymous",
   created_at: "2026-01-01T00:00:00Z",
 }
 
@@ -65,6 +66,14 @@ describe("submit-entry handler", () => {
     [{ title: "Title", message: "   " }, "whitespace message"],
     [{ title: "a".repeat(91), message: "Message" }, "long title"],
     [{ title: "Title", message: "a".repeat(1401) }, "long message"],
+    [
+      { title: "Title", message: "Message", author: "a".repeat(31) },
+      "long pen name",
+    ],
+    [
+      { title: "Title", message: "Message", author: 123 },
+      "non-string pen name",
+    ],
   ])("returns 400 for %s", async (payload) => {
     expect((await handleSubmitEntry(request(payload), deps())).status).toBe(400)
   })
@@ -104,14 +113,32 @@ describe("submit-entry handler", () => {
     expect(response.status).toBe(429)
   })
 
-  it("inserts only trimmed title and message", async () => {
+  it("inserts trimmed title, message, and default Anonymous author", async () => {
     const dependencies = deps()
     const response = await handleSubmitEntry(
       request({ title: "  Title  ", message: "  Message  " }),
       dependencies,
     )
     expect(response.status).toBe(201)
-    expect(dependencies.insertEntry).toHaveBeenCalledWith("Title", "Message")
+    expect(dependencies.insertEntry).toHaveBeenCalledWith(
+      "Title",
+      "Message",
+      "Anonymous",
+    )
+  })
+
+  it("inserts custom pen name when provided", async () => {
+    const dependencies = deps()
+    const response = await handleSubmitEntry(
+      request({ title: "Title", message: "Message", author: "  Wanderer  " }),
+      dependencies,
+    )
+    expect(response.status).toBe(201)
+    expect(dependencies.insertEntry).toHaveBeenCalledWith(
+      "Title",
+      "Message",
+      "Wanderer",
+    )
   })
 
   it("returns only public fields", async () => {

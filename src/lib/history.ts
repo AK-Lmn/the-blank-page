@@ -41,11 +41,12 @@ const draftKey = "the-blank-page-draft"
 export type Draft = {
   title: string
   message: string
+  author?: string
 }
 
 export function saveDraft(draft: Draft): void {
   try {
-    if (!draft.title && !draft.message) {
+    if (!draft.title && !draft.message && !draft.author) {
       clearDraft()
       return
     }
@@ -63,9 +64,15 @@ export function getDraft(): Draft | null {
     if (
       typeof parsed?.title === "string" &&
       typeof parsed?.message === "string" &&
-      (parsed.title.length > 0 || parsed.message.length > 0)
+      (parsed.title.length > 0 ||
+        parsed.message.length > 0 ||
+        (typeof parsed?.author === "string" && parsed.author.length > 0))
     ) {
-      return { title: parsed.title, message: parsed.message }
+      return {
+        title: parsed.title,
+        message: parsed.message,
+        author: typeof parsed.author === "string" ? parsed.author : "",
+      }
     }
     return null
   } catch {

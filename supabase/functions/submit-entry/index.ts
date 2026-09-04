@@ -30,11 +30,11 @@ Deno.serve((request) =>
     allowedOrigins,
     checkAbuse: (incomingRequest, normalizedContent) =>
       checkRateLimit(incomingRequest, normalizedContent, rateLimitConfig),
-    insertEntry: async (title, message) => {
+    insertEntry: async (title, message, author) => {
       const { data, error } = await supabase
         .from("entries")
-        .insert({ title, message })
-        .select("public_id, title, message, created_at")
+        .insert({ title, message, author })
+        .select("public_id, title, message, author, created_at")
         .single()
 
       if (error || !data) throw new Error("insert-failed")

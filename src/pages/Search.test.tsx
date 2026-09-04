@@ -29,7 +29,7 @@ describe("Search", () => {
       </MemoryRouter>,
     )
     await user.type(
-      screen.getByLabelText("Search public entries by title"),
+      screen.getByLabelText(/Search public entries by title/i),
       "a",
     )
     await new Promise((resolve) => setTimeout(resolve, 350))
@@ -48,7 +48,7 @@ describe("Search", () => {
         <Search />
       </MemoryRouter>,
     )
-    const input = screen.getByLabelText("Search public entries by title")
+    const input = screen.getByLabelText(/Search public entries by title/i)
     await user.type(input, "old")
     await waitFor(
       () => expect(mocks.searchEntries).toHaveBeenCalledWith("old"),
@@ -97,7 +97,7 @@ describe("Search", () => {
       </MemoryRouter>,
     )
     await user.type(
-      screen.getByLabelText("Search public entries by title"),
+      screen.getByLabelText(/Search public entries by title/i),
       "%__%",
     )
     expect(

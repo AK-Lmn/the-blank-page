@@ -1,6 +1,6 @@
 import type { AbuseCheckResult } from "./core.ts"
 
-type RedisResult = { result?: unknown error?: string }
+type RedisResult = { result?: unknown; error?: string }
 
 export type RateLimitConfig = {
   redisUrl: string

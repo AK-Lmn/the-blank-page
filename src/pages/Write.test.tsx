@@ -60,8 +60,32 @@ describe("Write", () => {
     await user.type(screen.getByLabelText("Message"), "Message")
     await user.click(screen.getByRole("button", { name: "Submit anonymously" }))
     expect(await screen.findByText("Entry destination")).toBeInTheDocument()
+    expect(mocks.submitEntry).toHaveBeenCalledWith("Title", "Message", "", "")
     expect(mocks.saveToHistory).toHaveBeenCalledWith(
       expect.objectContaining({ id: "public-id" }),
+    )
+  })
+
+  it("submits with a custom pen name", async () => {
+    const user = userEvent.setup()
+    mocks.submitEntry.mockResolvedValue({
+      id: "public-id-author",
+      title: "Title",
+      message: "Message",
+      author: "Wanderer",
+      createdAt: "2026-01-01",
+    })
+    renderWrite()
+    await user.type(screen.getByLabelText("Title"), "Title")
+    await user.type(screen.getByLabelText(/Pen Name/i), "Wanderer")
+    await user.type(screen.getByLabelText("Message"), "Message")
+    await user.click(screen.getByRole("button", { name: "Submit anonymously" }))
+    expect(await screen.findByText("Entry destination")).toBeInTheDocument()
+    expect(mocks.submitEntry).toHaveBeenCalledWith(
+      "Title",
+      "Message",
+      "Wanderer",
+      "",
     )
   })
 
@@ -139,9 +163,11 @@ describe("Write", () => {
     mocks.getDraft.mockReturnValue({
       title: "Restored Title",
       message: "Restored Message",
+      author: "Restored Author",
     })
     renderWrite()
     expect(screen.getByLabelText("Title")).toHaveValue("Restored Title")
+    expect(screen.getByLabelText(/Pen Name/i)).toHaveValue("Restored Author")
     expect(screen.getByLabelText("Message")).toHaveValue("Restored Message")
     expect(
       screen.getByText("Draft restored from this device"),
@@ -151,6 +177,7 @@ describe("Write", () => {
     await user.click(screen.getByRole("button", { name: "Clear draft" }))
     expect(mocks.clearDraft).toHaveBeenCalled()
     expect(screen.getByLabelText("Title")).toHaveValue("")
+    expect(screen.getByLabelText(/Pen Name/i)).toHaveValue("")
     expect(screen.getByLabelText("Message")).toHaveValue("")
     expect(
       screen.queryByText("Draft restored from this device"),
@@ -173,7 +200,7 @@ describe("Write", () => {
     const form = title.closest("form")!
     fireEvent.keyDown(form, { key: "Enter", ctrlKey: true })
 
-    expect(mocks.submitEntry).toHaveBeenCalledWith("Title", "Message", "")
+    expect(mocks.submitEntry).toHaveBeenCalledWith("Title", "Message", "", "")
     expect(await screen.findByText("Entry destination")).toBeInTheDocument()
     expect(mocks.clearDraft).toHaveBeenCalled()
   })

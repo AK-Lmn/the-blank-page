@@ -36,7 +36,9 @@ export default function EntryCard({
       </div>
       <div className="mt-4 flex items-center justify-between">
         <p className="text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[#6f8190] dark:text-[#8b949e]">
-          {date}
+          {entry.author && entry.author !== "Anonymous"
+            ? `${entry.author} · ${date}`
+            : date}
         </p>
         {showReadLink && (
           <span className="text-[0.68rem] font-medium text-[#2f556a] dark:text-[#72a5c0] opacity-0 transition group-hover:opacity-100 group-focus:opacity-100">

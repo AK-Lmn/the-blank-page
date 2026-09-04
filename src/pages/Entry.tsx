@@ -108,7 +108,7 @@ export default function Entry() {
         <div className="border-l-2 border-[#b9aabb] dark:border-[#72a5c0]/50 pl-5 sm:pl-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#8a718e] dark:text-[#d8b4e2]">
-              Anonymous · {formatEntryDate(entry.createdAt)}
+              {entry.author || "Anonymous"} · {formatEntryDate(entry.createdAt)}
             </p>
             <button
               type="button"

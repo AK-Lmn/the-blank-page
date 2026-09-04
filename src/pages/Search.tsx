@@ -69,8 +69,8 @@ export default function Search() {
           Find a thought
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[#596773] dark:text-[#8b949e] sm:text-lg">
-          Search public entries by title. Only titles are searchable; the
-          message body remains for reading, not discovery.
+          Search public entries by title or pen name. The message body remains
+          for reading, not discovery.
         </p>
       </div>
       <div className="mx-auto mt-10 max-w-2xl">
