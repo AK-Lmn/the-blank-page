@@ -62,13 +62,13 @@ export default function Search() {
   return (
     <section className="mx-auto w-full max-w-3xl pb-16 pt-10 sm:pb-24 sm:pt-20">
       <div className="text-center">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#8a718e]">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#8a718e] dark:text-[#d8b4e2]">
           Search
         </p>
-        <h1 className="font-display mt-3 text-5xl tracking-[-0.05em] text-[#141a1f] sm:text-6xl">
+        <h1 className="font-display mt-3 text-5xl tracking-[-0.05em] text-[#141a1f] dark:text-[#f0f6fc] sm:text-6xl">
           Find a thought
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[#596773] sm:text-lg">
+        <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[#596773] dark:text-[#8b949e] sm:text-lg">
           Search public entries by title. Only titles are searchable; the
           message body remains for reading, not discovery.
         </p>
@@ -90,37 +90,39 @@ export default function Search() {
         {canSearch && loading && (
           <div
             role="status"
-            className="rounded-[24px] border border-dashed border-[#c5ccd3] bg-white/30 px-7 py-14 text-center"
+            className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-14 text-center"
           >
-            <p className="font-display text-2xl text-[#3c4f5d]">Searching…</p>
+            <p className="font-display text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
+              Searching…
+            </p>
           </div>
         )}
         {canSearch && !loading && failed && (
           <div
             role="alert"
-            className="rounded-[24px] border border-[#d0c6d2] bg-[#f3f1f4] px-7 py-14 text-center"
+            className="rounded-[24px] border border-white/60 dark:border-white/10 bg-white/75 dark:bg-[#131b23]/75 backdrop-blur-xl px-7 py-14 text-center shadow-[0_8px_24px_rgba(60,79,93,0.04)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
           >
-            <p className="font-display text-2xl text-[#3c4f5d]">
+            <p className="font-display text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
               Search is unavailable just now
             </p>
-            <p className="mt-3 text-sm text-[#6f8190]">
+            <p className="mt-3 text-sm text-[#6f8190] dark:text-[#8b949e]">
               Please wait a moment and try again.
             </p>
           </div>
         )}
         {canSearch && !loading && !failed && results.length === 0 && (
-          <div className="rounded-[24px] border border-dashed border-[#c5ccd3] bg-white/30 px-7 py-14 text-center">
-            <p className="font-display text-2xl text-[#3c4f5d]">
+          <div className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-14 text-center">
+            <p className="font-display text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
               No entries found
             </p>
-            <p className="mt-3 text-sm text-[#6f8190]">
+            <p className="mt-3 text-sm text-[#6f8190] dark:text-[#8b949e]">
               Try a different title or a shorter phrase.
             </p>
           </div>
         )}
         {canSearch && !loading && !failed && results.length > 0 && (
           <div>
-            <p className="mb-5 border-b border-[#c5ccd3] pb-3 text-xs font-medium uppercase tracking-[0.16em] text-[#6f8190]">
+            <p className="mb-5 border-b border-[#c5ccd3]/50 dark:border-white/10 pb-3 text-xs font-medium uppercase tracking-[0.16em] text-[#6f8190] dark:text-[#8b949e]">
               Matching public entries
             </p>
             <div className="space-y-3">
@@ -137,8 +139,8 @@ export default function Search() {
 
 function SearchPrompt({ message }: { message: string }) {
   return (
-    <div className="rounded-[24px] border border-dashed border-[#c5ccd3] bg-white/30 px-7 py-14 text-center">
-      <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#f3f1f4] text-[#8a718e]">
+    <div className="rounded-[24px] border border-dashed border-white/60 dark:border-white/15 bg-white/40 dark:bg-white/5 backdrop-blur-md px-7 py-14 text-center">
+      <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-white/60 dark:bg-white/10 text-[#8a718e] dark:text-[#d8b4e2]">
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
@@ -151,7 +153,9 @@ function SearchPrompt({ message }: { message: string }) {
           <path d="m15.5 15.5 4 4" strokeLinecap="round" />
         </svg>
       </div>
-      <p className="font-display mt-5 text-2xl text-[#3c4f5d]">{message}</p>
+      <p className="font-display mt-5 text-2xl text-[#3c4f5d] dark:text-[#f0f6fc]">
+        {message}
+      </p>
     </div>
   )
 }

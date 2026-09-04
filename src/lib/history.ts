@@ -35,3 +35,48 @@ export function findHistoryEntry(publicId: string): Entry | undefined {
 export function clearHistory(): void {
   localStorage.removeItem(storageKey)
 }
+
+const draftKey = "the-blank-page-draft"
+
+export type Draft = {
+  title: string
+  message: string
+}
+
+export function saveDraft(draft: Draft): void {
+  try {
+    if (!draft.title && !draft.message) {
+      clearDraft()
+      return
+    }
+    localStorage.setItem(draftKey, JSON.stringify(draft))
+  } catch {
+    // Gracefully handle storage quota or private mode issues
+  }
+}
+
+export function getDraft(): Draft | null {
+  try {
+    const raw = localStorage.getItem(draftKey)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<Draft>
+    if (
+      typeof parsed?.title === "string" &&
+      typeof parsed?.message === "string" &&
+      (parsed.title.length > 0 || parsed.message.length > 0)
+    ) {
+      return { title: parsed.title, message: parsed.message }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+export function clearDraft(): void {
+  try {
+    localStorage.removeItem(draftKey)
+  } catch {
+    // Gracefully handle storage issues
+  }
+}

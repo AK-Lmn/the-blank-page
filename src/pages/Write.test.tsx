@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const mocks = vi.hoisted(() => ({
   submitEntry: vi.fn(),
   saveToHistory: vi.fn(),
+  getDraft: vi.fn(),
+  saveDraft: vi.fn(),
+  clearDraft: vi.fn(),
 }))
 vi.mock("../lib/api", async () => {
   class EntrySubmissionError extends Error {
@@ -15,7 +18,12 @@ vi.mock("../lib/api", async () => {
   }
   return { submitEntry: mocks.submitEntry, EntrySubmissionError }
 })
-vi.mock("../lib/history", () => ({ saveToHistory: mocks.saveToHistory }))
+vi.mock("../lib/history", () => ({
+  saveToHistory: mocks.saveToHistory,
+  getDraft: mocks.getDraft,
+  saveDraft: mocks.saveDraft,
+  clearDraft: mocks.clearDraft,
+}))
 
 import Write from "./Write"
 
@@ -34,6 +42,9 @@ describe("Write", () => {
   beforeEach(() => {
     mocks.submitEntry.mockReset()
     mocks.saveToHistory.mockReset()
+    mocks.getDraft.mockReturnValue(null)
+    mocks.saveDraft.mockReset()
+    mocks.clearDraft.mockReset()
   })
 
   it("navigates using the returned public ID", async () => {
@@ -121,5 +132,49 @@ describe("Write", () => {
     fireEvent.change(message, { target: { value: "a".repeat(1400) } })
     expect(message).toHaveValue("a".repeat(1400))
     expect(message).toHaveAttribute("maxlength", "1400")
+  })
+
+  it("restores a saved draft on mount and displays restored notice", async () => {
+    const user = userEvent.setup()
+    mocks.getDraft.mockReturnValue({
+      title: "Restored Title",
+      message: "Restored Message",
+    })
+    renderWrite()
+    expect(screen.getByLabelText("Title")).toHaveValue("Restored Title")
+    expect(screen.getByLabelText("Message")).toHaveValue("Restored Message")
+    expect(
+      screen.getByText("Draft restored from this device"),
+    ).toBeInTheDocument()
+
+    // Clear draft button
+    await user.click(screen.getByRole("button", { name: "Clear draft" }))
+    expect(mocks.clearDraft).toHaveBeenCalled()
+    expect(screen.getByLabelText("Title")).toHaveValue("")
+    expect(screen.getByLabelText("Message")).toHaveValue("")
+    expect(
+      screen.queryByText("Draft restored from this device"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("submits using Ctrl+Enter keyboard shortcut", async () => {
+    mocks.submitEntry.mockResolvedValue({
+      id: "shortcut-id",
+      title: "Title",
+      message: "Message",
+      createdAt: "2026-01-01",
+    })
+    renderWrite()
+    const title = screen.getByLabelText("Title")
+    const message = screen.getByLabelText("Message")
+    fireEvent.change(title, { target: { value: "Title" } })
+    fireEvent.change(message, { target: { value: "Message" } })
+
+    const form = title.closest("form")!
+    fireEvent.keyDown(form, { key: "Enter", ctrlKey: true })
+
+    expect(mocks.submitEntry).toHaveBeenCalledWith("Title", "Message", "")
+    expect(await screen.findByText("Entry destination")).toBeInTheDocument()
+    expect(mocks.clearDraft).toHaveBeenCalled()
   })
 })

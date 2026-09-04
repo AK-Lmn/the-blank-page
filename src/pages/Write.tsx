@@ -1,19 +1,34 @@
-import { FormEvent, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router"
 import PrimaryButton from "../components/PrimaryButton"
 import { EntrySubmissionError, submitEntry } from "../lib/api"
-import { saveToHistory } from "../lib/history"
+import { clearDraft, getDraft, saveDraft, saveToHistory } from "../lib/history"
+import { useTheme } from "../lib/ThemeContext"
 
 const titleLimit = 90
 const messageLimit = 1400
 
+const isMac =
+  typeof navigator !== "undefined" &&
+  /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent || navigator.platform)
+const shortcutBadge = isMac ? "⌘Enter" : "Ctrl+Enter"
+
 export default function Write() {
   const navigate = useNavigate()
-  const [title, setTitle] = useState("")
-  const [message, setMessage] = useState("")
+  const { triggerTypingGlow } = useTheme()
+  const [title, setTitle] = useState(() => getDraft()?.title ?? "")
+  const [message, setMessage] = useState(() => getDraft()?.message ?? "")
   const [website, setWebsite] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [draftRestored, setDraftRestored] = useState(() => {
+    const draft = getDraft()
+    return Boolean(draft && (draft.title || draft.message))
+  })
+
+  useEffect(() => {
+    saveDraft({ title, message })
+  }, [title, message])
 
   const trimmedTitle = title.trim()
   const trimmedMessage = message.trim()
@@ -23,13 +38,13 @@ export default function Write() {
     trimmedMessage.length >= 1 &&
     trimmedMessage.length <= messageLimit
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function executeSubmit() {
     if (submitting || !canSubmit) return
     setSubmitting(true)
     setError("")
     try {
       const entry = await submitEntry(trimmedTitle, trimmedMessage, website)
+      clearDraft()
       saveToHistory(entry)
       navigate(`/entry/${entry.id}`)
     } catch (submissionError) {
@@ -43,39 +58,94 @@ export default function Write() {
     }
   }
 
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    void executeSubmit()
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault()
+      void executeSubmit()
+    }
+  }
+
+  function handleClearDraft() {
+    clearDraft()
+    setTitle("")
+    setMessage("")
+    setDraftRestored(false)
+  }
+
+  function handleTitleChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setTitle(event.target.value)
+    triggerTypingGlow?.()
+  }
+
+  function handleMessageChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+    setMessage(event.target.value)
+    triggerTypingGlow?.()
+  }
+
   return (
     <section className="mx-auto w-full max-w-[680px] pb-16 pt-10 sm:pt-20">
       <Link
         to="/"
-        className="mb-10 inline-flex min-h-11 items-center text-sm text-[#596773] transition hover:text-[#141a1f]"
+        className="mb-10 inline-flex min-h-11 items-center text-sm text-[#596773] dark:text-[#8b949e] transition hover:text-[#141a1f] dark:hover:text-white"
       >
         ← Back
       </Link>
-      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#8a718e]">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#8a718e] dark:text-[#d8b4e2]">
         The Blank Page
       </p>
-      <h1 className="font-display mt-3 text-5xl tracking-[-0.05em] text-[#141a1f] sm:text-6xl">
+      <h1 className="font-display mt-3 text-5xl tracking-[-0.05em] text-[#141a1f] dark:text-[#f0f6fc] sm:text-6xl">
         Say something
       </h1>
-      <p className="mt-4 text-lg leading-7 text-[#596773]">
+      <p className="mt-4 text-lg leading-7 text-[#596773] dark:text-[#8b949e]">
         Your writing will be public, with no account or name attached.
       </p>
       <form
         onSubmit={submit}
+        onKeyDown={handleKeyDown}
         aria-busy={submitting}
-        className="relative mt-11 space-y-7 rounded-[24px] border border-[#c5ccd3] bg-white/70 p-6 shadow-[0_15px_40px_rgba(60,79,93,0.06)] sm:p-9"
+        className="relative mt-11 space-y-7 rounded-[28px] border border-white/60 dark:border-white/10 bg-white/75 dark:bg-[#131b23]/75 backdrop-blur-xl p-6 shadow-[0_18px_50px_rgba(60,79,93,0.06)] dark:shadow-[0_18px_50px_rgba(0,0,0,0.4)] sm:p-9"
       >
+        {draftRestored && (
+          <div
+            role="status"
+            className="flex items-center justify-between rounded-xl border border-white/60 dark:border-white/15 bg-white/60 dark:bg-white/10 backdrop-blur-md px-4 py-2.5 text-xs text-[#596773] dark:text-[#8b949e]"
+          >
+            <span>Draft restored from this device</span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleClearDraft}
+                className="font-medium text-[#6f4f70] dark:text-[#d8b4e2] underline underline-offset-2 hover:text-[#432f44] dark:hover:text-[#edd4f5] focus:outline-none focus:ring-2 focus:ring-[#72a5c0]"
+              >
+                Clear draft
+              </button>
+              <button
+                type="button"
+                onClick={() => setDraftRestored(false)}
+                className="text-[#6f8190] dark:text-[#8b949e] hover:text-[#141a1f] dark:hover:text-white focus:outline-none"
+                aria-label="Dismiss draft notice"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
         <div>
           <div className="mb-2.5 flex items-center justify-between gap-4">
             <label
               htmlFor="entry-title"
-              className="text-sm font-semibold text-[#3c4f5d]"
+              className="text-sm font-semibold text-[#3c4f5d] dark:text-[#c9d1d9]"
             >
               Title
             </label>
             <span
               id="title-count"
-              className="text-xs tabular-nums text-[#6f8190]"
+              className="text-xs tabular-nums text-[#6f8190] dark:text-[#8b949e]"
             >
               {title.length} / {titleLimit}
             </span>
@@ -83,26 +153,26 @@ export default function Write() {
           <input
             id="entry-title"
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={handleTitleChange}
             maxLength={titleLimit}
             required
             disabled={submitting}
             aria-describedby="title-count"
             placeholder="Give this thought a name"
-            className="w-full rounded-xl border border-[#c5ccd3] bg-[#f1f2f4] px-4 py-3.5 text-base outline-none placeholder:text-[#8c9aa6] focus:border-[#4f8eb0] focus:ring-2 focus:ring-[#b9d2df] disabled:opacity-70"
+            className="w-full rounded-xl border border-white/60 dark:border-white/15 bg-white/70 dark:bg-[#0c1015]/70 backdrop-blur-sm px-4 py-3.5 text-base text-[#141a1f] dark:text-[#f0f6fc] outline-none placeholder:text-[#8c9aa6] dark:placeholder:text-[#6e7681] focus:border-[#4f8eb0] dark:focus:border-[#72a5c0] focus:ring-2 focus:ring-[#b9d2df] dark:focus:ring-[#72a5c0]/30 disabled:opacity-70"
           />
         </div>
         <div>
           <div className="mb-2.5 flex items-center justify-between gap-4">
             <label
               htmlFor="entry-message"
-              className="text-sm font-semibold text-[#3c4f5d]"
+              className="text-sm font-semibold text-[#3c4f5d] dark:text-[#c9d1d9]"
             >
               Message
             </label>
             <span
               id="message-count"
-              className="text-xs tabular-nums text-[#6f8190]"
+              className="text-xs tabular-nums text-[#6f8190] dark:text-[#8b949e]"
             >
               {message.length.toLocaleString()} /{" "}
               {messageLimit.toLocaleString()}
@@ -111,13 +181,13 @@ export default function Write() {
           <textarea
             id="entry-message"
             value={message}
-            onChange={(event) => setMessage(event.target.value)}
+            onChange={handleMessageChange}
             maxLength={messageLimit}
             required
             disabled={submitting}
             aria-describedby="message-count"
             placeholder="Write freely. Take your time."
-            className="min-h-56 w-full resize-y rounded-xl border border-[#c5ccd3] bg-[#f1f2f4] px-4 py-3.5 text-base leading-7 outline-none placeholder:text-[#8c9aa6] focus:border-[#4f8eb0] focus:ring-2 focus:ring-[#b9d2df] disabled:opacity-70"
+            className="min-h-56 w-full resize-y rounded-xl border border-white/60 dark:border-white/15 bg-white/70 dark:bg-[#0c1015]/70 backdrop-blur-sm px-4 py-3.5 text-base text-[#141a1f] dark:text-[#f0f6fc] leading-7 outline-none placeholder:text-[#8c9aa6] dark:placeholder:text-[#6e7681] focus:border-[#4f8eb0] dark:focus:border-[#72a5c0] focus:ring-2 focus:ring-[#b9d2df] dark:focus:ring-[#72a5c0]/30 disabled:opacity-70"
           />
           <label
             aria-hidden="true"
@@ -133,19 +203,23 @@ export default function Write() {
             />
           </label>
         </div>
-        <div className="flex flex-col gap-4 border-t border-[#e2e6e9] pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-sm text-xs leading-5 text-[#6f8190]">
+        <div className="flex flex-col gap-4 border-t border-[#e2e6e9]/60 dark:border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-sm text-xs leading-5 text-[#6f8190] dark:text-[#8b949e]">
             A public entry will be created. A copy stays in this browser for 7
             days so you can find it again.
           </p>
-          <PrimaryButton type="submit" disabled={!canSubmit || submitting}>
+          <PrimaryButton
+            type="submit"
+            disabled={!canSubmit || submitting}
+            shortcut={shortcutBadge}
+          >
             {submitting ? "Publishing…" : "Submit anonymously"}
           </PrimaryButton>
         </div>
         {error && (
           <p
             role="alert"
-            className="rounded-xl bg-[#f3f1f4] px-4 py-3 text-sm text-[#6f4f70]"
+            className="rounded-xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-[#131b23]/80 px-4 py-3 text-sm text-[#6f4f70] dark:text-[#fca5a5]"
           >
             {error}
           </p>

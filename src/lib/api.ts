@@ -85,3 +85,15 @@ export async function searchEntries(query: string): Promise<Entry[]> {
 
   return ((data ?? []) as PublicEntryRow[]).map((row) => toEntry(row))
 }
+
+export async function fetchRandomEntry(
+  excludeId?: string,
+): Promise<Entry | null> {
+  const entries = await fetchEntries()
+  const candidates = excludeId
+    ? entries.filter((entry) => entry.id !== excludeId)
+    : entries
+  if (candidates.length === 0) return null
+  const randomIndex = Math.floor(Math.random() * candidates.length)
+  return candidates[randomIndex] ?? null
+}

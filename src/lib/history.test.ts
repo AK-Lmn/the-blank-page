@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest"
-import { clearHistory, getHistory, saveToHistory } from "./history"
+import {
+  clearDraft,
+  clearHistory,
+  getDraft,
+  getHistory,
+  saveDraft,
+  saveToHistory,
+} from "./history"
 import type { Entry } from "../types"
 
 const entry = (id: string, createdAt = new Date().toISOString()): Entry => ({
@@ -37,5 +44,31 @@ describe("local history", () => {
     saveToHistory(entry("one"))
     clearHistory()
     expect(localStorage.getItem("the-blank-page-history")).toBeNull()
+  })
+
+  describe("drafts", () => {
+    it("returns null when no draft exists", () => {
+      expect(getDraft()).toBeNull()
+    })
+
+    it("saves and retrieves a draft", () => {
+      saveDraft({ title: "My quiet thought", message: "Here is what I feel" })
+      expect(getDraft()).toEqual({
+        title: "My quiet thought",
+        message: "Here is what I feel",
+      })
+    })
+
+    it("clears draft if title and message are empty", () => {
+      saveDraft({ title: "Title", message: "Message" })
+      saveDraft({ title: "", message: "" })
+      expect(getDraft()).toBeNull()
+    })
+
+    it("clears draft explicitly", () => {
+      saveDraft({ title: "Draft", message: "Some thoughts" })
+      clearDraft()
+      expect(getDraft()).toBeNull()
+    })
   })
 })

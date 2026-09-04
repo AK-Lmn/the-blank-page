@@ -5,7 +5,9 @@ import {
   RouterProvider,
   useLocation,
 } from "react-router"
+import AuroraBackground from "./components/AuroraBackground"
 import Header from "./components/Header"
+import { ThemeProvider } from "./lib/ThemeContext"
 import Entry from "./pages/Entry"
 import History from "./pages/History"
 import Home from "./pages/Home"
@@ -22,7 +24,8 @@ function AppLayout() {
   }, [location.pathname])
 
   return (
-    <div className="min-h-screen bg-[#f1f2f4] text-[#28343e] selection:bg-[#b9d2df] selection:text-[#141a1f]">
+    <div className="relative min-h-screen text-[#28343e] dark:text-[#e6edf3] selection:bg-[#b9d2df] selection:text-[#141a1f] dark:selection:bg-[#72a5c0]/30 dark:selection:text-[#f0f6fc] transition-colors duration-500">
+      <AuroraBackground />
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>
@@ -56,5 +59,9 @@ const router = createBrowserRouter([
 ])
 
 export default function App() {
-  return <RouterProvider router={router} />
+  return (
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  )
 }

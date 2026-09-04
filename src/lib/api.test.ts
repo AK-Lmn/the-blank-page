@@ -9,13 +9,26 @@ vi.mock("./supabase", () => ({
   supabase: { from: mocks.from, functions: { invoke: mocks.invoke } },
 }))
 
-import { fetchEntries, getPublicEntry, searchEntries, submitEntry } from "./api"
+import {
+  fetchEntries,
+  fetchRandomEntry,
+  getPublicEntry,
+  searchEntries,
+  submitEntry,
+} from "./api"
 
 const row = {
   public_id: "public-123",
   title: "Title",
   message: "Message",
   created_at: "2026-01-01T00:00:00Z",
+}
+
+const row2 = {
+  public_id: "public-456",
+  title: "Second Title",
+  message: "Second Message",
+  created_at: "2026-01-02T00:00:00Z",
 }
 
 describe("entry API", () => {
@@ -78,5 +91,38 @@ describe("entry API", () => {
     expect(select).toHaveBeenCalledWith("public_id, title, message, created_at")
     expect(ilike).toHaveBeenCalledWith("title", "%quiet%")
     expect(limit).toHaveBeenCalledWith(20)
+  })
+
+  describe("fetchRandomEntry", () => {
+    it("returns a random entry from the fetched list", async () => {
+      const limit = vi
+        .fn()
+        .mockResolvedValue({ data: [row, row2], error: null })
+      const order = vi.fn(() => ({ limit }))
+      const select = vi.fn(() => ({ order }))
+      mocks.from.mockReturnValue({ select })
+      const random = await fetchRandomEntry()
+      expect(["public-123", "public-456"]).toContain(random?.id)
+    })
+
+    it("excludes the specified ID", async () => {
+      const limit = vi
+        .fn()
+        .mockResolvedValue({ data: [row, row2], error: null })
+      const order = vi.fn(() => ({ limit }))
+      const select = vi.fn(() => ({ order }))
+      mocks.from.mockReturnValue({ select })
+      const random = await fetchRandomEntry("public-123")
+      expect(random?.id).toBe("public-456")
+    })
+
+    it("returns null if no candidates are available", async () => {
+      const limit = vi.fn().mockResolvedValue({ data: [row], error: null })
+      const order = vi.fn(() => ({ limit }))
+      const select = vi.fn(() => ({ order }))
+      mocks.from.mockReturnValue({ select })
+      const random = await fetchRandomEntry("public-123")
+      expect(random).toBeNull()
+    })
   })
 })
