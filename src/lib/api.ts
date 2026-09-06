@@ -44,7 +44,7 @@ export async function submitEntry(
 const fullEntryColumns = "public_id, title, message, author, created_at"
 const legacyEntryColumns = "public_id, title, message, created_at"
 
-function isColumnError(error: { message?: string code?: string }): boolean {
+function isColumnError(error: { message?: string; code?: string }): boolean {
   return Boolean(
     error.code === "42501" ||
       error.code === "PGRST204" ||
