@@ -10,7 +10,7 @@ A quiet public space for writing without accounts, profiles, or social metrics.
 * No accounts or profiles
 * No reactions, comments, or social metrics
 * Responsive React + Tailwind interface
-* Public entries stored in Supabase
+* Public entries stored in Neon Postgres
 * Local 7-day submission history using `localStorage`
 
 ## Tech Stack
@@ -20,18 +20,25 @@ A quiet public space for writing without accounts, profiles, or social metrics.
 * Vite
 * Tailwind CSS
 * React Router
-* Supabase
+* Neon Postgres
+* Vercel Functions
 
 ## Local Development
 
 ```bash
 npm install
-npm run dev
+neon env pull        # writes DATABASE_URL for the linked Neon branch
+vercel dev           # serves the Vite app and the /api functions together
 ```
+
+`npm run dev` runs the frontend alone; `/api` requests need `vercel dev`.
+Copy `.env.example` for the other variables.
 
 ## Project Structure
 
 ```txt
+api/entries/         Vercel Functions: GET/POST /api/entries, GET /api/entries/:id
+server/              Validation, rate limiting, and SQL used by the functions
 src/
 ├── components/
 ├── lib/
@@ -43,21 +50,21 @@ src/
 
 ## Data Architecture
 
-Public entries are stored in Supabase. PostgreSQL generates each entry's
+Public entries are stored in Neon Postgres. PostgreSQL generates each entry's
 `public_id`, which is the only identifier used in public URLs and local history.
-The browser submits only the entry title and message.
+The browser submits only the entry title, message, and optional pen name.
 
-Row Level Security allows anonymous visitors to read visible entries and submit
-new entries through a protected Edge Function, while preventing public updates,
-deletes, and access to internal or moderation columns. The function validates
-payloads, applies short-lived rate limits and duplicate protection, and inserts
-only the title and message. A local copy of a writer's recent submissions is
-retained in their current browser for 7 days; clearing that history does not
-delete the public entry.
+The browser never talks to the database. Vercel Functions under `/api` run
+fixed, parameterized queries that return only public columns, so there is no
+public path to update, delete, or read internal columns. The submit endpoint
+validates payloads, applies short-lived rate limits and duplicate protection,
+and inserts only the title, message, and pen name. A local copy of a writer's
+recent submissions is retained in their current browser for 7 days; clearing
+that history does not delete the public entry.
 
 ```txt
-Public reads: Browser -> Supabase Data API -> RLS -> visible entries
-Writes:       Browser -> submit-entry Edge Function -> validation/rate limit -> Supabase
+Public reads: Browser -> GET /api/entries -> Neon
+Writes:       Browser -> POST /api/entries -> validation/rate limit -> Neon
 ```
 
 The rate limiter uses ephemeral Redis keys and does not store raw IP addresses.
