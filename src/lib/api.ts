@@ -1,5 +1,6 @@
-import { supabase } from "./supabase"
 import type { Entry, PublicEntryRow } from "../types"
+
+const ENTRIES_URL = "/api/entries"
 
 function toEntry(row: PublicEntryRow, local = false): Entry {
   return {
@@ -18,6 +19,18 @@ export class EntrySubmissionError extends Error {
   }
 }
 
+export class EntryRequestError extends Error {
+  constructor(public readonly status: number) {
+    super(`Entry request failed with status ${status}`)
+  }
+}
+
+async function getJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, { headers: { Accept: "application/json" } })
+  if (!response.ok) throw new EntryRequestError(response.status)
+  return (await response.json()) as T
+}
+
 export async function submitEntry(
   title: string,
   message: string,
@@ -27,112 +40,49 @@ export async function submitEntry(
   const payload: Record<string, string> = { title, message }
   if (author.trim()) payload.author = author.trim()
   if (website) payload.website = website
-  const { data, error } = await supabase.functions.invoke("submit-entry", {
-    body: payload,
-  })
 
-  if (error) {
-    const status =
-      error.context instanceof Response ? error.context.status : undefined
+  let response: Response
+  try {
+    response = await fetch(ENTRIES_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+  } catch {
     console.error("Entry submission request failed")
-    throw new EntrySubmissionError(status)
+    throw new EntrySubmissionError()
   }
 
-  return toEntry(data as PublicEntryRow, true)
-}
+  if (!response.ok) {
+    console.error("Entry submission request failed")
+    throw new EntrySubmissionError(response.status)
+  }
 
-const fullEntryColumns = "public_id, title, message, author, created_at"
-const legacyEntryColumns = "public_id, title, message, created_at"
-
-function isColumnError(
-  error: { message?: string } & { code?: string },
-): boolean {
-  return Boolean(
-    error.code === "42501" ||
-      error.code === "PGRST204" ||
-      error.code === "42703" ||
-      error.message?.includes("author") ||
-      error.message?.includes("permission denied"),
-  )
+  return toEntry((await response.json()) as PublicEntryRow, true)
 }
 
 export async function fetchEntries(): Promise<Entry[]> {
-  const { data, error } = await supabase
-    .from("entries")
-    .select(fullEntryColumns)
-    .order("created_at", { ascending: false })
-    .limit(20)
-
-  if (error) {
-    if (isColumnError(error)) {
-      const fallback = await supabase
-        .from("entries")
-        .select(legacyEntryColumns)
-        .order("created_at", { ascending: false })
-        .limit(20)
-      if (!fallback.error && fallback.data) {
-        return (fallback.data as PublicEntryRow[]).map((row) => toEntry(row))
-      }
-    }
-    console.error("Supabase fetch error:", error)
-    throw error
-  }
-
-  return ((data ?? []) as PublicEntryRow[]).map((row) => toEntry(row))
+  const rows = await getJson<PublicEntryRow[]>(ENTRIES_URL)
+  return rows.map((row) => toEntry(row))
 }
 
 export async function getPublicEntry(publicId: string): Promise<Entry | null> {
-  const { data, error } = await supabase
-    .from("entries")
-    .select(fullEntryColumns)
-    .eq("public_id", publicId)
-    .maybeSingle()
-
-  if (error) {
-    if (isColumnError(error)) {
-      const fallback = await supabase
-        .from("entries")
-        .select(legacyEntryColumns)
-        .eq("public_id", publicId)
-        .maybeSingle()
-      if (!fallback.error) {
-        if (!fallback.data) return null
-        return toEntry(fallback.data as PublicEntryRow)
-      }
-    }
-    console.error("Supabase entry fetch error:", error)
+  try {
+    return toEntry(
+      await getJson<PublicEntryRow>(
+        `${ENTRIES_URL}/${encodeURIComponent(publicId)}`,
+      ),
+    )
+  } catch (error) {
+    if (error instanceof EntryRequestError && error.status === 404) return null
     throw error
   }
-  if (!data) return null
-
-  return toEntry(data as PublicEntryRow)
 }
 
 export async function searchEntries(query: string): Promise<Entry[]> {
-  const { data, error } = await supabase
-    .from("entries")
-    .select(fullEntryColumns)
-    .or(`title.ilike.%${query}%,author.ilike.%${query}%`)
-    .order("created_at", { ascending: false })
-    .limit(20)
-
-  if (error) {
-    if (isColumnError(error)) {
-      const fallback = await supabase
-        .from("entries")
-        .select(legacyEntryColumns)
-        .ilike("title", `%${query}%`)
-        .order("created_at", { ascending: false })
-        .limit(20)
-      if (!fallback.error && fallback.data) {
-        return (fallback.data as PublicEntryRow[]).map((row) => toEntry(row))
-      }
-    }
-    console.error("Supabase search error:", error)
-    throw error
-  }
-
-  return ((data ?? []) as PublicEntryRow[]).map((row) => toEntry(row))
+  const params = new URLSearchParams({ q: query })
+  const rows = await getJson<PublicEntryRow[]>(`${ENTRIES_URL}?${params}`)
+  return rows.map((row) => toEntry(row))
 }
 
 export async function fetchRandomEntry(

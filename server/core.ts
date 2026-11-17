@@ -32,8 +32,7 @@ function corsHeaders(
   allowedOrigins: string[],
 ): HeadersInit {
   const headers: Record<string, string> = {
-    "Access-Control-Allow-Headers":
-      "authorization, apikey, content-type, x-client-info",
+    "Access-Control-Allow-Headers": "content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     Vary: "Origin",
   }
@@ -89,7 +88,10 @@ export async function handleSubmitEntry(
   deps: SubmitEntryDependencies,
 ): Promise<Response> {
   const origin = request.headers.get("origin")
-  const cors = corsHeaders(origin, deps.allowedOrigins)
+  // The API is served from the site's own origin, so same-origin requests
+  // (including Vercel preview URLs) are always allowed.
+  const allowedOrigins = [...deps.allowedOrigins, new URL(request.url).origin]
+  const cors = corsHeaders(origin, allowedOrigins)
 
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers: cors })
@@ -101,7 +103,7 @@ export async function handleSubmitEntry(
       { Allow: "POST, OPTIONS" },
     )
   }
-  if (origin && !deps.allowedOrigins.includes(origin)) {
+  if (origin && !allowedOrigins.includes(origin)) {
     deps.log("origin_rejected")
     return jsonResponse(
       403,

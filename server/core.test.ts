@@ -74,8 +74,38 @@ describe("submit-entry handler", () => {
       { title: "Title", message: "Message", author: 123 },
       "non-string pen name",
     ],
-  ])("returns 400 for %s", async (payload) => {
+  ])("returns 400 for %s", async (payload, _label) => {
     expect((await handleSubmitEntry(request(payload), deps())).status).toBe(400)
+  })
+
+  it("rejects a cross-origin submission not on the allow list", async () => {
+    const dependencies = deps()
+    const response = await handleSubmitEntry(
+      request({ title: "Title", message: "Message" }, {
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://evil.example",
+        },
+      }),
+      dependencies,
+    )
+    expect(response.status).toBe(403)
+    expect(dependencies.insertEntry).not.toHaveBeenCalled()
+  })
+
+  it("accepts a same-origin submission without an allow-list entry", async () => {
+    const response = await handleSubmitEntry(
+      new Request("https://preview-abc.vercel.app/api/entries", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://preview-abc.vercel.app",
+        },
+        body: JSON.stringify({ title: "Title", message: "Message" }),
+      }),
+      deps({ allowedOrigins: [] }),
+    )
+    expect(response.status).toBe(201)
   })
 
   it("rejects a populated honeypot without inserting", async () => {

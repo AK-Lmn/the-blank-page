@@ -1,14 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
-
-const mocks = vi.hoisted(() => ({
-  from: vi.fn(),
-  invoke: vi.fn(),
-}))
-
-vi.mock("./supabase", () => ({
-  supabase: { from: mocks.from, functions: { invoke: mocks.invoke } },
-}))
-
+import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   fetchEntries,
   fetchRandomEntry,
@@ -33,30 +23,43 @@ const row2 = {
   created_at: "2026-01-02T00:00:00Z",
 }
 
-describe("entry API", () => {
-  beforeEach(() => {
-    mocks.from.mockReset()
-    mocks.invoke.mockReset()
-  })
+function respond(status: number, body: unknown = null) {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValue(
+      new Response(body === null ? null : JSON.stringify(body), { status }),
+    )
+  vi.stubGlobal("fetch", fetchMock)
+  return fetchMock
+}
 
-  it("submits title and message through the Edge Function", async () => {
-    mocks.invoke.mockResolvedValue({ data: row, error: null })
+describe("entry API", () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it("posts title and message to the entries endpoint", async () => {
+    const fetchMock = respond(201, row)
     await submitEntry("Title", "Message")
-    expect(mocks.invoke).toHaveBeenCalledWith("submit-entry", {
-      body: { title: "Title", message: "Message" },
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe("/api/entries")
+    expect(init.method).toBe("POST")
+    expect(JSON.parse(init.body)).toEqual({
+      title: "Title",
+      message: "Message",
     })
   })
 
-  it("submits author when provided", async () => {
-    mocks.invoke.mockResolvedValue({ data: row, error: null })
-    await submitEntry("Title", "Message", "Wanderer")
-    expect(mocks.invoke).toHaveBeenCalledWith("submit-entry", {
-      body: { title: "Title", message: "Message", author: "Wanderer" },
+  it("includes author when provided", async () => {
+    const fetchMock = respond(201, row)
+    await submitEntry("Title", "Message", " Wanderer ")
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      title: "Title",
+      message: "Message",
+      author: "Wanderer",
     })
   })
 
   it("maps public_id and author to the frontend entry", async () => {
-    mocks.invoke.mockResolvedValue({ data: row, error: null })
+    respond(201, row)
     await expect(
       submitEntry("Title", "Message", "Wanderer"),
     ).resolves.toMatchObject({
@@ -66,78 +69,62 @@ describe("entry API", () => {
     })
   })
 
-  it("surfaces function errors", async () => {
-    mocks.invoke.mockResolvedValue({
-      data: null,
-      error: { context: new Response(null, { status: 429 }) },
-    })
+  it("surfaces the status of a failed submission", async () => {
+    respond(429, { error: "slow down" })
     await expect(submitEntry("Title", "Message")).rejects.toMatchObject({
       status: 429,
     })
   })
 
-  it("selects only public fields for the feed", async () => {
-    const limit = vi.fn().mockResolvedValue({ data: [row], error: null })
-    const order = vi.fn(() => ({ limit }))
-    const select = vi.fn(() => ({ order }))
-    mocks.from.mockReturnValue({ select })
-    await fetchEntries()
-    expect(select).toHaveBeenCalledWith(
-      "public_id, title, message, author, created_at",
-    )
+  it("loads the feed", async () => {
+    const fetchMock = respond(200, [row, row2])
+    const entries = await fetchEntries()
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/entries")
+    expect(entries.map((entry) => entry.id)).toEqual([
+      "public-123",
+      "public-456",
+    ])
   })
 
-  it("queries detail only by public_id", async () => {
-    const maybeSingle = vi.fn().mockResolvedValue({ data: row, error: null })
-    const eq = vi.fn(() => ({ maybeSingle }))
-    const select = vi.fn(() => ({ eq }))
-    mocks.from.mockReturnValue({ select })
-    await getPublicEntry("public-123")
-    expect(eq).toHaveBeenCalledWith("public_id", "public-123")
+  it("throws when the feed fails", async () => {
+    respond(500, { error: "boom" })
+    await expect(fetchEntries()).rejects.toThrow()
   })
 
-  it("keeps search limited and searches both title and author", async () => {
-    const limit = vi.fn().mockResolvedValue({ data: [row], error: null })
-    const order = vi.fn(() => ({ limit }))
-    const or = vi.fn(() => ({ order }))
-    const select = vi.fn(() => ({ or }))
-    mocks.from.mockReturnValue({ select })
-    await searchEntries("quiet")
-    expect(select).toHaveBeenCalledWith(
-      "public_id, title, message, author, created_at",
-    )
-    expect(or).toHaveBeenCalledWith("title.ilike.%quiet%,author.ilike.%quiet%")
-    expect(limit).toHaveBeenCalledWith(20)
+  it("loads one entry by encoded public id", async () => {
+    const fetchMock = respond(200, row)
+    await expect(getPublicEntry("public-123")).resolves.toMatchObject({
+      id: "public-123",
+    })
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/entries/public-123")
+  })
+
+  it("returns null for a missing entry", async () => {
+    respond(404, { error: "Entry not found." })
+    await expect(getPublicEntry("nope")).resolves.toBeNull()
+  })
+
+  it("sends the search term as a query parameter", async () => {
+    const fetchMock = respond(200, [row])
+    await searchEntries("quiet & calm")
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/entries?q=quiet+%26+calm")
   })
 
   describe("fetchRandomEntry", () => {
     it("returns a random entry from the fetched list", async () => {
-      const limit = vi
-        .fn()
-        .mockResolvedValue({ data: [row, row2], error: null })
-      const order = vi.fn(() => ({ limit }))
-      const select = vi.fn(() => ({ order }))
-      mocks.from.mockReturnValue({ select })
+      respond(200, [row, row2])
       const random = await fetchRandomEntry()
       expect(["public-123", "public-456"]).toContain(random?.id)
     })
 
     it("excludes the specified ID", async () => {
-      const limit = vi
-        .fn()
-        .mockResolvedValue({ data: [row, row2], error: null })
-      const order = vi.fn(() => ({ limit }))
-      const select = vi.fn(() => ({ order }))
-      mocks.from.mockReturnValue({ select })
+      respond(200, [row, row2])
       const random = await fetchRandomEntry("public-123")
       expect(random?.id).toBe("public-456")
     })
 
     it("returns null if no candidates are available", async () => {
-      const limit = vi.fn().mockResolvedValue({ data: [row], error: null })
-      const order = vi.fn(() => ({ limit }))
-      const select = vi.fn(() => ({ order }))
-      mocks.from.mockReturnValue({ select })
+      respond(200, [row])
       const random = await fetchRandomEntry("public-123")
       expect(random).toBeNull()
     })
